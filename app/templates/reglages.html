@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClipMinute — réglages</title>
+<style>
+  :root {
+    --fond:#0e1016; --panneau:#161922; --panneau-2:#1d212c; --ligne:#242a36;
+    --texte:#eceef4; --sourdine:#9298a8; --cyan:#b6ff3a; --rouge:#ff2d55; --ok:#4ade80;
+    --sans:"Segoe UI",system-ui,-apple-system,sans-serif;
+    --mono:"Cascadia Mono",Consolas,"Roboto Mono",monospace;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background:var(--fond);
+    background-image:radial-gradient(120vw 55vh at 50% -12%, rgba(47,240,230,.05), transparent 62%);
+    color:var(--texte); font-family:var(--sans); font-size:15px; line-height:1.55;
+    padding:24px clamp(16px,4vw,48px) 72px; max-width:860px; margin:0 auto; -webkit-font-smoothing:antialiased; }
+  h1 { font-family:var(--sans); font-weight:850; font-size:23px; letter-spacing:-.01em; text-transform:none; text-shadow:none; }
+  .retour { color:var(--sourdine); text-decoration:none; display:inline-flex; align-items:center; gap:6px;
+    font-size:13.5px; margin-bottom:24px; transition:color .15s; }
+  .retour:hover { color:var(--texte); }
+  h2 { display:inline-flex; align-items:center; gap:10px; font-family:var(--sans); font-weight:800; font-size:15px;
+    text-transform:none; background:none; color:var(--texte); padding:0; border-radius:0; margin:0 0 16px; }
+  h2::before { content:""; width:3px; height:15px; border-radius:2px; background:linear-gradient(180deg,var(--cyan),var(--rouge)); flex:none; }
+  .carte { position:relative; background:linear-gradient(180deg,#181c27,var(--panneau)); border:1px solid var(--ligne);
+    border-radius:14px; padding:20px; margin-bottom:22px; box-shadow:0 1px 2px rgba(0,0,0,.35),0 10px 30px rgba(0,0,0,.26);
+    animation:rise .5s cubic-bezier(.2,.75,.25,1) both; }
+  @keyframes rise{ from{ opacity:0; transform:translateY(14px) } to{ opacity:1; transform:none } }
+  label { display: block; color: var(--sourdine); font-size: 13px; margin: 12px 0 4px; }
+  input, select, textarea { width: 100%; background: var(--panneau-2); color: var(--texte);
+    border: 1px solid var(--ligne); border-radius: 8px; padding: 9px 10px; font: inherit; }
+  textarea { min-height: 72px; resize: vertical; }
+  input:focus, select:focus, textarea:focus, button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
+  .deux { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 640px) { .deux { grid-template-columns: 1fr; } }
+  .indication { font-size: 12.5px; color: var(--sourdine); margin-top: 6px; }
+  #enregistrer { position: sticky; bottom: 16px; width: 100%; padding: 13px; border: 0;
+    border-radius: 10px; background: var(--texte); color: #14161c; font-weight: 700;
+    font-size: 15px; cursor: pointer; box-shadow: 0 6px 24px rgba(0,0,0,.5); }
+  #enregistrer:hover { background: #fff; }
+  .case { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  .case input { width: auto; }
+</style>
+</head>
+<body>
+  <h1>Réglages</h1>
+  <p style="color:var(--sourdine);margin-bottom:8px">Tout est enregistré dans config.json — les tâches en cours ne sont pas affectées, les suivantes appliquent les nouveaux réglages.</p>
+  <a class="retour" href="/">← Retour à la régie</a>
+
+  <section class="carte">
+    <h2>Publication</h2>
+    <div class="case"><input type="checkbox" id="pause"><label for="pause" style="margin:0">Publication en pause (rien ne part tant que c'est coché)</label></div>
+    <div class="deux">
+      <div><label for="max_posts_jour">Plafond de posts par jour (garde-fou)</label>
+        <input type="number" id="max_posts_jour" min="1" max="10"></div>
+      <div><label for="privacy_level">Visibilité des posts</label>
+        <select id="privacy_level">
+          <option value="PUBLIC_TO_EVERYONE">Public</option>
+          <option value="FOLLOWER_OF_CREATOR">Abonnés uniquement</option>
+          <option value="SELF_ONLY">Privé (moi seul)</option>
+        </select></div>
+    </div>
+    <label for="heures_publication">Heures de publication autorisées (séparées par des virgules)</label>
+    <input type="text" id="heures_publication" placeholder="12:00, 18:00, 21:00">
+  </section>
+
+  <section class="carte">
+    <h2>Production</h2>
+    <div class="deux">
+      <div><label for="duree_partie_sec">Durée cible d'une partie (secondes)</label>
+        <input type="number" id="duree_partie_sec" min="20" max="180"></div>
+      <div><label for="whisper_modele">Modèle de transcription Whisper</label>
+        <select id="whisper_modele">
+          <option value="tiny">tiny (le plus rapide, moins précis)</option>
+          <option value="base">base</option>
+          <option value="small">small (recommandé)</option>
+          <option value="medium">medium (lent sur ce CPU)</option>
+        </select></div>
+    </div>
+    <label for="langue_source">Langue des vidéos sources (code : fr, en… vide = détection auto)</label>
+    <input type="text" id="langue_source" maxlength="5">
+  </section>
+
+  <section class="carte">
+    <h2>Profil</h2>
+    <label for="sel-profil">Profil à modifier</label>
+    <select id="sel-profil"></select>
+    <label for="p-theme">Ligne éditoriale (pilote le rédacteur en chef IA et le ton des scripts)</label>
+    <textarea id="p-theme"></textarea>
+    <div class="deux">
+      <div><label for="p-voix">Voix off</label>
+        <select id="p-voix">
+          <option value="fr-FR-RemyMultilingualNeural">Rémy (homme, chaleureux)</option>
+          <option value="fr-FR-VivienneMultilingualNeural">Vivienne (femme, posée)</option>
+          <option value="fr-FR-HenriNeural">Henri (homme, classique)</option>
+          <option value="fr-FR-DeniseNeural">Denise (femme, classique)</option>
+          <option value="fr-FR-EloiseNeural">Éloïse (jeune femme)</option>
+        </select></div>
+      <div><label for="p-vitesse">Vitesse de la voix</label>
+        <select id="p-vitesse">
+          <option value="+0%">Normale</option>
+          <option value="+8%">+8 % (recommandé)</option>
+          <option value="+15%">+15 % (rythme TikTok soutenu)</option>
+          <option value="-5%">-5 % (posé)</option>
+        </select></div>
+    </div>
+    <div class="deux">
+      <div><label for="p-mots">Longueur par défaut des histoires</label>
+        <select id="p-mots">
+          <option value="175">~1 minute (1 clip)</option>
+          <option value="520">~3 minutes (série de 3 parties)</option>
+          <option value="700">~4 minutes (série de 4 parties)</option>
+          <option value="880">~5 minutes (série de 5 parties)</option>
+        </select></div>
+      <div><label for="p-style">Style de sous-titres</label>
+        <select id="p-style">
+          <option value="karaoke">Karaoké (mot courant surligné)</option>
+          <option value="classique">Classique (groupes de mots, pop)</option>
+        </select></div>
+    </div>
+    <label for="p-pseudo">Pseudo / watermark (affiché en bas des clips)</label>
+    <input type="text" id="p-pseudo" placeholder="@ma.chaine">
+    <label for="p-sujets">Thèmes récurrents (un par ligne — utilisés quand aucun sujet n'est donné)</label>
+    <textarea id="p-sujets"></textarea>
+    <label for="p-recherches">Recherches de fonds vidéo Pexels (une par ligne, en anglais)</label>
+    <textarea id="p-recherches"></textarea>
+  </section>
+
+  <section class="carte">
+    <h2>Clés API</h2>
+    <div class="deux">
+      <div><label for="cle-anthropic">Clé API Anthropic (génération des scripts)</label>
+        <input type="password" id="cle-anthropic" autocomplete="off" placeholder="sk-ant-…"></div>
+      <div><label for="cle-pexels">Clé Pexels (fonds vidéo)</label>
+        <input type="password" id="cle-pexels" autocomplete="off"></div>
+      <div><label for="cle-zernio">Clé Zernio (ancien service, optionnel)</label>
+        <input type="password" id="cle-zernio" autocomplete="off"></div>
+    </div>
+    <p class="indication">Les clés existantes sont masquées. Ne saisis une valeur que pour la remplacer.
+      La clé Anthropic se crée sur console.anthropic.com → API keys ; elle sert à écrire les scripts de tes clips.</p>
+  </section>
+
+  <section class="carte">
+    <h2>TikTok (app développeur)</h2>
+    <p class="indication" style="margin-bottom:6px">Depuis le portail developers.tiktok.com → section Credentials. Publication native, quota dédié, sans intermédiaire.</p>
+    <div class="deux">
+      <div><label for="tt-client-key">Client Key</label>
+        <input type="password" id="tt-client-key" autocomplete="off"></div>
+      <div><label for="tt-client-secret">Client Secret</label>
+        <input type="password" id="tt-client-secret" autocomplete="off"></div>
+    </div>
+    <label class="case" style="margin-top:10px"><input type="checkbox" id="tt-voir" style="width:auto"> Afficher les clés</label>
+    <label for="tt-mode">Environnement</label>
+    <select id="tt-mode">
+      <option value="sandbox">Sandbox (test, ton compte uniquement)</option>
+      <option value="production">Production (après validation de l'audit)</option>
+    </select>
+  </section>
+
+  <button id="enregistrer" type="button">Enregistrer les réglages</button>
+
+<script>
+const $ = (s) => document.querySelector(s);
+let R = null;
+
+// afficher/masquer les clés sensibles
+document.addEventListener("change", (e) => {
+  if (e.target.id === "tt-voir") {
+    const t = e.target.checked ? "text" : "password";
+    ["cle-anthropic", "cle-pexels", "cle-zernio", "tt-client-key", "tt-client-secret"].forEach((id) => {
+      const el = document.getElementById(id); if (el) el.type = t;
+    });
+  }
+});
+
+function chargerProfil(nom) {
+  const p = R.profils[nom];
+  $("#p-theme").value = p.theme || "";
+  $("#p-voix").value = p.voix || "fr-FR-RemyMultilingualNeural";
+  $("#p-vitesse").value = p.vitesse_voix || "+8%";
+  $("#p-mots").value = String(p.mots_par_clip || 520);
+  $("#p-style").value = p.style_soustitres || "karaoke";
+  $("#p-pseudo").value = p.pseudo || "";
+  $("#p-sujets").value = (p.sujets || []).join("\n");
+  $("#p-recherches").value = (p.pexels_recherches || []).join("\n");
+}
+
+function lireProfil() {
+  return {
+    theme: $("#p-theme").value.trim(),
+    voix: $("#p-voix").value,
+    vitesse_voix: $("#p-vitesse").value,
+    mots_par_clip: parseInt($("#p-mots").value, 10),
+    style_soustitres: $("#p-style").value,
+    pseudo: $("#p-pseudo").value.trim(),
+    sujets: $("#p-sujets").value.split("\n").map(s => s.trim()).filter(Boolean),
+    pexels_recherches: $("#p-recherches").value.split("\n").map(s => s.trim()).filter(Boolean),
+  };
+}
+
+(async () => {
+  R = await (await fetch("/api/reglages")).json();
+  $("#pause").checked = !!R.publication.pause;
+  $("#max_posts_jour").value = R.publication.max_posts_jour || 3;
+  $("#privacy_level").value = R.publication.privacy_level || "PUBLIC_TO_EVERYONE";
+  $("#heures_publication").value = (R.global.heures_publication || []).join(", ");
+  $("#duree_partie_sec").value = R.global.duree_partie_sec || 60;
+  $("#whisper_modele").value = R.global.whisper_modele || "small";
+  $("#langue_source").value = R.global.langue_source || "";
+  $("#cle-pexels").value = R.cles.pexels;
+  $("#cle-anthropic").value = R.cles.anthropic || "";
+  $("#cle-zernio").value = R.cles.zernio;
+  $("#tt-client-key").value = R.tiktok.client_key || "";
+  $("#tt-client-secret").value = R.tiktok.client_secret || "";
+  $("#tt-mode").value = R.tiktok.mode || "sandbox";
+  $("#sel-profil").innerHTML = Object.keys(R.profils).map(n =>
+    `<option value="${n}" ${n === R.profil_defaut ? "selected" : ""}>${n}</option>`).join("");
+  chargerProfil($("#sel-profil").value);
+})();
+
+$("#sel-profil").addEventListener("change", (e) => {
+  R.profils[e.target._precedent || R.profil_defaut] = lireProfil();
+  chargerProfil(e.target.value);
+  e.target._precedent = e.target.value;
+});
+
+$("#enregistrer").addEventListener("click", async () => {
+  const nom = $("#sel-profil").value;
+  R.profils[nom] = lireProfil();
+  const corps = {
+    global: {
+      duree_partie_sec: parseInt($("#duree_partie_sec").value, 10),
+      whisper_modele: $("#whisper_modele").value,
+      langue_source: $("#langue_source").value.trim() || null,
+      heures_publication: $("#heures_publication").value.split(",").map(s => s.trim()).filter(Boolean),
+    },
+    publication: {
+      pause: $("#pause").checked,
+      max_posts_jour: parseInt($("#max_posts_jour").value, 10),
+      privacy_level: $("#privacy_level").value,
+    },
+    profils: R.profils,
+    cles: { pexels: $("#cle-pexels").value.trim(), zernio: $("#cle-zernio").value.trim(),
+            anthropic: $("#cle-anthropic").value.trim() },
+    tiktok: { client_key: $("#tt-client-key").value.trim(), client_secret: $("#tt-client-secret").value.trim(), mode: $("#tt-mode").value },
+  };
+  const r = await fetch("/api/reglages", { method: "POST",
+    headers: { "Content-Type": "application/json" }, body: JSON.stringify(corps) });
+  const btn = $("#enregistrer");
+  btn.textContent = r.ok ? "Réglages enregistrés ✓" : "Erreur d'enregistrement";
+  setTimeout(() => { btn.textContent = "Enregistrer les réglages"; }, 2000);
+});
+</script>
+<script src="/static/fenetre.js" defer></script>
+</body>
+</html>

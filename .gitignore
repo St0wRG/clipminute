@@ -1,0 +1,68 @@
+# ============================================================================
+#  ClipMinute — fichiers JAMAIS publiés (secrets, données utilisateurs, build)
+#  Règle : en cas de doute, on exclut. Vérifier avec `git status --ignored`.
+# ============================================================================
+
+# --- SECRETS ET DONNÉES UTILISATEURS (le plus important) --------------------
+data/                 # données isolées par compte : jetons TikTok, clés, clips, stats
+config.json           # config locale : clés API (Anthropic, Pexels) + jetons TikTok
+comptes.json          # comptes locaux (e-mails + hachages de mots de passe)
+.secret_key           # clé de signature des sessions Flask
+profil_recent.json    # e-mail du dernier compte connecté (donnée personnelle)
+.env
+*.pem
+*.key
+
+# --- CONTENU PRODUIT / TEMPORAIRE ------------------------------------------
+queue/
+output/
+sources/
+thumbs/
+jobs/
+rapports/
+logs/
+calendrier.json
+journal.jsonl
+journal_lu.txt
+stats.db
+*.mp4
+*.mp3
+*.ass
+*.srt
+*.db
+*.jsonl
+*.words.json
+
+# --- BIBLIOTHÈQUES DE MÉDIAS (lourdes, non redistribuables) ----------------
+assets/backgrounds/
+assets/backgrounds_pexels/
+assets/musiques/
+assets/sfx/
+assets/polices/
+
+# --- ARTEFACTS DE BUILD (gros binaires + copie du code) --------------------
+installer/build/
+installer/cache/
+installer/Output/
+
+# --- PYTHON / OUTILS -------------------------------------------------------
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# --- SCRIPTS DE TRAVAIL PERSONNELS ----------------------------------------
+_*.py
+
+# --- SYSTÈME / ÉDITEURS ----------------------------------------------------
+Thumbs.db
+desktop.ini
+.DS_Store
+.idea/
+.vscode/
+
+# doc de travail interne (stratégie audit) — non publiée
+app/docs/

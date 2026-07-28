@@ -1,0 +1,1411 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClipMinute — régie</title>
+<style>
+  :root {
+    --fond:#0e1016; --panneau:#161922; --panneau-2:#1d212c;
+    --ligne:#242a36; --ligne-2:#333a48; --texte:#eceef4; --sourdine:#9298a8; --faint:#5c6272;
+    --cyan:#b6ff3a; --rouge:#ff2d55; --ok:#4ade80; --erreur:#f87171;
+    --sans:"Segoe UI",system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+    --mono:"Cascadia Mono","Cascadia Code",Consolas,"Roboto Mono",monospace;
+    --r:14px; --r-sm:10px;
+    --ombre:0 1px 2px rgba(0,0,0,.35), 0 10px 30px rgba(0,0,0,.26);
+    --ombre-lift:0 6px 16px rgba(0,0,0,.4), 0 22px 52px rgba(0,0,0,.42);
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background:var(--fond);
+    background-image:radial-gradient(130vw 60vh at 50% -12%, rgba(47,240,230,.05), transparent 62%);
+    color:var(--texte); font-family:var(--sans); font-size:15px; line-height:1.55;
+    padding:22px clamp(16px,4vw,48px) 80px; -webkit-font-smoothing:antialiased;
+  }
+  /* Wordmark : « CLIP » sobre + « FORGE » accentué + point « live » qui pulse (signature console) */
+  h1 {
+    font-family:var(--sans); font-weight:850; font-size:23px; letter-spacing:.03em;
+    text-transform:uppercase; text-shadow:none; color:var(--texte);
+    display:inline-flex; align-items:center;
+  }
+  h1 .fg { color:var(--cyan); }
+  h1::after { content:""; width:7px; height:7px; border-radius:50%; background:var(--cyan);
+    margin-left:10px; box-shadow:0 0 10px var(--cyan); animation:live 2.4s ease-in-out infinite; }
+  @keyframes live { 0%,100%{ opacity:.35 } 50%{ opacity:1 } }
+  .sous-logo { color:var(--sourdine); font-size:13px; margin:6px 0 26px; letter-spacing:.02em;
+    font-family:var(--mono); text-transform:uppercase; }
+
+  .grille { display: grid; grid-template-columns: 380px 1fr; gap: 24px; }
+  @media (max-width: 980px) { .grille { grid-template-columns: 1fr; } }
+
+  /* Titres de section : sobres, avec un liseré-signal dégradé (fini la pastille noire) */
+  h2 {
+    display:inline-flex; align-items:center; gap:10px; font-family:var(--sans);
+    font-weight:800; font-size:15px; letter-spacing:-.006em; text-transform:none;
+    background:none; color:var(--texte); padding:0; border-radius:0; margin:0 0 16px;
+  }
+  h2::before { content:""; width:3px; height:15px; border-radius:2px; flex:none;
+    background:linear-gradient(180deg,var(--cyan),var(--rouge)); }
+
+  .carte {
+    position:relative; background:linear-gradient(180deg,#181c27,var(--panneau));
+    border:1px solid var(--ligne); border-radius:var(--r); padding:20px; margin-bottom:22px;
+    box-shadow:var(--ombre);
+  }
+  .carte::before { content:""; position:absolute; left:1px; right:1px; top:0; height:1px; border-radius:var(--r) var(--r) 0 0;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent); pointer-events:none; }
+  label { display:block; color:var(--sourdine); font-size:12.5px; font-weight:500; margin:12px 0 5px; }
+  input[type=text], input[type=number], input[type=file], select {
+    width:100%; background:var(--panneau-2); color:var(--texte);
+    border:1px solid var(--ligne); border-radius:var(--r-sm); padding:10px 12px; font:inherit;
+  }
+  input:focus, select:focus, button:focus-visible { outline:2px solid var(--cyan); outline-offset:1px; }
+  button {
+    margin-top:14px; width:100%; padding:11px 14px; border:0; border-radius:var(--r-sm);
+    background:var(--cyan); color:#052a27; font-weight:750; font-size:14.5px; cursor:pointer; letter-spacing:.01em;
+  }
+  button:hover { background:#54f5ec; }
+  button:disabled { opacity:.45; cursor:wait; }
+  .indication { font-size: 12.5px; color: var(--sourdine); margin-top: 8px; }
+
+  /* Tâches en cours */
+  .job { border-top: 1px solid var(--ligne); padding: 10px 2px; }
+  .job:first-child { border-top: 0; }
+  .job-titre { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; }
+  .pastille { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .en_cours .pastille { background: var(--cyan); animation: pulse 1.2s infinite; }
+  .termine .pastille { background: var(--ok); }
+  .erreur .pastille { background: var(--erreur); }
+  @keyframes pulse { 50% { opacity: .3; } }
+  @media (prefers-reduced-motion: reduce) { .en_cours .pastille { animation: none; } }
+  .job-log { font: 12px/1.5 Consolas, monospace; color: var(--sourdine);
+             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 3px; }
+  .jauge { height: 4px; background: var(--panneau-2); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+  .jauge > div { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--rouge)); }
+  .vide { color: var(--sourdine); font-size: 14px; }
+
+  /* Historique : cartes 9:16 façon écrans de téléphone */
+  .clips { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
+  .clip { background: var(--panneau); border: 1px solid var(--ligne); border-radius: 12px; overflow: hidden; }
+  .clip video { display: block; width: 100%; aspect-ratio: 9/16; object-fit: cover; background: #000; }
+  .clip-infos { padding: 10px 12px; }
+  .clip-titre { font-weight: 600; font-size: 13.5px; line-height: 1.3; }
+  .clip-meta { color: var(--sourdine); font-size: 12px; margin-top: 4px; }
+  .clip-actions { display: flex; gap: 8px; margin-top: 8px; }
+  .clip-actions button {
+    margin: 0; padding: 6px; font-size: 12.5px; font-weight: 600;
+    background: var(--panneau-2); color: var(--texte); border: 1px solid var(--ligne);
+  }
+  .clip-actions button:hover { background: var(--ligne); }
+  .clip-actions .danger:hover { background: var(--rouge); border-color: var(--rouge); color: #fff; }
+  .clip.a-publier { border-color: var(--cyan); }
+  .clip-actions .btn-tele { flex: 1; text-align: center; padding: 6px; font-size: 12.5px; font-weight: 700;
+    border-radius: 8px; text-decoration: none; background: var(--texte); color: #14161c; border: 1px solid var(--texte); }
+  .clip-actions .btn-tele:hover { background: #fff; }
+  .clip-actions .ok { background: #12301d; color: var(--ok); border-color: #1c5033; }
+  .clip-actions .ok:hover { background: var(--ok); color: #08130c; border-color: var(--ok); }
+  #a-publier-compte { font-size: 13px; color: var(--cyan); font-weight: 600; }
+
+  /* Bandeau KPI */
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 22px; }
+  .kpi { position:relative; background:var(--panneau); border:1px solid var(--ligne); border-radius:12px; padding:13px 15px; overflow:hidden; }
+  .kpi::before { content:""; position:absolute; left:0; top:0; bottom:0; width:2px; background:var(--cyan); opacity:.6; }
+  .kpi b { display:block; font-size:27px; font-family:var(--mono); font-weight:700; line-height:1.05; letter-spacing:-.02em; color:var(--texte); }
+  .kpi span { font-size:11.5px; color:var(--sourdine); display:block; text-transform:uppercase; letter-spacing:.05em; margin-top:2px; }
+  .kpi em { font-size: 11.5px; color: var(--sourdine); font-style: normal; opacity: .8; }
+  #modal-bio:not([hidden]) { display: flex; }
+  #modal-tiktok:not([hidden]) { display: flex; }
+  #modal-boost:not([hidden]) { display: flex; }
+  #modal-hooks:not([hidden]) { display: flex; }
+  .hook-card { display:flex; flex-direction:column; gap:5px; width:100%; text-align:left;
+    padding:14px 15px; margin:9px 0 0; background:var(--panneau-2); color:var(--texte);
+    border:1.5px solid var(--ligne); border-radius:12px; cursor:pointer;
+    transition:border-color .15s, transform .1s, box-shadow .15s; }
+  .hook-card:hover { border-color:var(--cyan); transform:translateY(-1px); }
+  .hook-card.sel { border-color:var(--cyan); box-shadow:inset 0 0 0 1.5px var(--cyan), 0 6px 18px rgba(47,240,230,.12); }
+  .hook-card .hook-angle { font-size:10.5px; text-transform:uppercase; letter-spacing:.09em;
+    color:var(--cyan); font-weight:800; }
+  .hook-card .hook-parle { font-size:15px; line-height:1.35; font-weight:600; }
+  .hook-card .hook-ecran { font-size:11px; color:var(--sourdine); font-family:var(--mono,ui-monospace,monospace); }
+  .hooks-load { padding:30px 10px; text-align:center; color:var(--sourdine); font-size:14px; }
+  .hooks-load b { color:var(--cyan); }
+  .tt-chk { display: flex; align-items: center; gap: 6px; font-size: 13.5px; }
+  .tt-chk input { width: auto; }
+  #pause-bandeau:not([hidden]), #alertes:not([hidden]) { display: flex; }
+  #tiktok-bandeau { align-items: center; gap: 12px; flex-wrap: wrap;
+    background: #101a1c; border: 1px solid var(--cyan); border-radius: 10px;
+    padding: 10px 14px; margin-bottom: 18px; font-size: 13.5px; }
+  #tiktok-bandeau:not([hidden]) { display: flex; }
+  #maj-bandeau:not([hidden]) { display: flex; }
+  .annulee .pastille { background: var(--sourdine); }
+  .job-annuler { margin: 0; margin-left: auto; width: auto; padding: 3px 10px; font-size: 12px;
+                 background: var(--panneau-2); color: var(--texte); border: 1px solid var(--ligne); flex: none; }
+  .job-annuler:hover { background: var(--rouge); border-color: var(--rouge); color: #fff; }
+  textarea { width: 100%; background: var(--panneau-2); color: var(--texte); border: 1px solid var(--ligne);
+             border-radius: 8px; padding: 9px 10px; font: inherit; min-height: 70px; resize: vertical; }
+  textarea:focus { outline: 2px solid var(--cyan); outline-offset: 1px; }
+
+  /* ——— Calendrier éditorial (vue visuelle, sombre) ——— */
+  :root{ --r-relatable:#b79cf0; --r-arnaque:#eeae49; --r-science:#54d2c9; --r-mystere:var(--rouge);
+         --serif:"Iowan Old Style","Palatino Linotype",Georgia,serif;
+         --mono:"Cascadia Mono",Consolas,"Roboto Mono",monospace; }
+  .cal-full{ margin-bottom:28px; }
+  .cal-full > .cal-head{ display:flex; align-items:center; flex-wrap:wrap; gap:8px 16px; margin-bottom:16px; }
+  .cal-toggle{ margin:0; width:auto; flex:none; padding:1px 9px; font-size:13px; line-height:1.4;
+    background:var(--panneau-2); color:var(--texte); border:1px solid var(--ligne); border-radius:7px;
+    cursor:pointer; transition:transform .18s ease; }
+  #cal-section.collapsed .cal-toggle{ transform:rotate(-90deg); }
+  #cal-section.collapsed #cal-body{ display:none; }
+  #btn-sync-stats{ margin-left:auto; }
+  .trends-panel{ display:flex; flex-wrap:wrap; align-items:center; gap:7px; margin-bottom:14px;
+    padding:9px 12px; background:var(--panneau-2); border:1px solid var(--ligne); border-radius:10px; }
+  .trends-panel .tp-label{ font-family:var(--mono); font-size:10px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--cyan); margin-right:4px; }
+  .trends-panel .tp-chip{ font-size:12px; color:var(--sourdine); background:var(--panneau);
+    border:1px solid var(--ligne); border-radius:999px; padding:3px 10px; }
+  /* graphes stats : multi-colonnes en pleine largeur -> chacun plus étroit et bien moins haut */
+  #graphes{ display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:4px 20px; align-items:start; }
+  #graphes svg{ max-height:130px; }
+
+  /* compteur de crédits de génération (piloté par l'abonnement) */
+  .credits{ display:inline-flex; align-items:center; gap:7px; padding:7px 13px 8px; border-radius:999px;
+    background:linear-gradient(180deg,#1b2130,var(--panneau-2)); border:1px solid var(--ligne);
+    position:relative; overflow:hidden; text-decoration:none; transition:filter .15s, border-color .2s; }
+  .credits:hover{ filter:brightness(1.12); border-color:var(--ligne-2); }
+  .credits .cr-ic{ font-size:13px; line-height:1; filter:drop-shadow(0 0 5px rgba(47,240,230,.7)); }
+  .credits .cr-val{ font-family:var(--mono); font-weight:700; font-size:15px; color:var(--texte); letter-spacing:-.02em; }
+  .credits .cr-lbl{ font-size:10px; color:var(--sourdine); text-transform:uppercase; letter-spacing:.08em; }
+  .credits .cr-bar{ position:absolute; left:0; right:0; bottom:0; height:2px; background:rgba(255,255,255,.06); }
+  .credits .cr-bar i{ display:block; height:100%; width:0; background:var(--cyan); box-shadow:0 0 6px var(--cyan);
+    transition:width .9s cubic-bezier(.2,.8,.2,1); }
+  .credits.mid .cr-bar i{ background:#eeae49; box-shadow:0 0 6px #eeae49; }
+  .credits.low{ border-color:var(--rouge); animation:critpulse 2s ease-in-out infinite; }
+  .credits.low .cr-val{ color:var(--rouge); } .credits.low .cr-ic{ filter:drop-shadow(0 0 5px rgba(255,45,85,.85)); }
+  .credits.low .cr-bar i{ background:var(--rouge); box-shadow:0 0 6px var(--rouge); }
+  @keyframes critpulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(255,45,85,0) } 50%{ box-shadow:0 0 12px 0 rgba(255,45,85,.35) } }
+
+  /* ============ COUCHE D'ANIMATIONS — dashboard moderne et vivant ============ */
+  /* halo animé très discret en fond (n'entrave pas la lecture) */
+  body::before{ content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background:radial-gradient(58vw 42vw at 12% -6%, rgba(37,244,238,.07), transparent 60%),
+               radial-gradient(52vw 42vw at 104% 8%, rgba(254,44,85,.06), transparent 60%);
+    animation:bgpulse 20s ease-in-out infinite; }
+  @keyframes bgpulse{ 0%,100%{ opacity:.55 } 50%{ opacity:1; transform:scale(1.06) } }
+
+  /* apparition en cascade des panneaux + relief au survol */
+  .carte{ animation:cardin .55s cubic-bezier(.2,.75,.25,1) both;
+    transition:transform .2s ease, box-shadow .25s ease, border-color .2s ease; }
+  .carte:hover{ transform:translateY(-3px); box-shadow:0 14px 40px rgba(0,0,0,.4); border-color:#39414f; }
+  .carte:nth-of-type(1){ animation-delay:.02s } .carte:nth-of-type(2){ animation-delay:.09s }
+  .carte:nth-of-type(3){ animation-delay:.16s } .carte:nth-of-type(4){ animation-delay:.23s }
+  .carte:nth-of-type(5){ animation-delay:.30s } .carte:nth-of-type(n+6){ animation-delay:.36s }
+  @keyframes cardin{ from{ opacity:0; transform:translateY(20px) } to{ opacity:1; transform:none } }
+
+  /* boutons : transitions douces + retour tactile au clic */
+  button{ transition:transform .12s ease, filter .18s ease, background .18s ease, box-shadow .2s ease; }
+  button:not(:disabled):hover{ filter:brightness(1.05); }
+  button:not(:disabled):active{ transform:scale(.96); }
+  input, select, textarea{ transition:border-color .18s ease, box-shadow .18s ease; }
+  input:focus, select:focus, textarea:focus{ box-shadow:0 0 0 3px rgba(37,244,238,.15); }
+
+  /* KPI : léger relief au survol + apparition */
+  .kpi{ transition:transform .2s ease, box-shadow .2s ease; }
+  .kpi:hover{ transform:translateY(-3px); box-shadow:0 10px 26px rgba(0,0,0,.35); }
+
+  /* calendrier repliable : transition douce (au lieu d'un display:none sec) */
+  #cal-body{ overflow:hidden; max-height:7000px; opacity:1;
+    transition:max-height .5s cubic-bezier(.3,.85,.3,1), opacity .35s ease; }
+  #cal-section.collapsed #cal-body{ max-height:0; opacity:0; }
+  .cal-toggle{ transition:transform .25s cubic-bezier(.3,.85,.3,1), background .15s; }
+
+  /* puces tendances + tags : micro-interaction */
+  .tp-chip{ transition:transform .15s ease, border-color .15s ease, color .15s ease; }
+  .tp-chip:hover{ transform:translateY(-2px); color:var(--texte); border-color:var(--cyan); }
+  .cs-tag, .tag{ transition:transform .15s ease; }
+  .cal-slot:hover .cs-tag{ transform:scale(1.04); }
+
+  /* badge abonnement : reflet qui balaie */
+  #abo-badge{ position:relative; overflow:hidden; }
+  #abo-badge::after{ content:""; position:absolute; top:0; left:-60%; width:40%; height:100%;
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent); transform:skewX(-18deg);
+    animation:shine 5.5s ease-in-out infinite; }
+  @keyframes shine{ 0%,72%{ left:-60% } 84%,100%{ left:130% } }
+
+  /* clips de l'historique : apparition + relief */
+  .clip{ animation:cardin .45s ease both; transition:transform .2s ease, box-shadow .2s ease; }
+  .clip:hover{ transform:translateY(-3px); box-shadow:0 12px 30px rgba(0,0,0,.4); }
+
+  /* liens d'action (retirer, fait, débloquer) : souligné animé */
+  .cal-suppr{ transition:color .15s ease; }
+
+  /* ——— effets premium supplémentaires ——— */
+  /* projecteur d'ambiance qui suit le curseur */
+  #spotlight{ position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:0; transition:opacity .4s ease;
+    background:radial-gradient(360px circle at var(--mx,50%) var(--my,50%), rgba(47,240,230,.07), transparent 68%); }
+  body:hover #spotlight{ opacity:1; }
+  /* lueur qui suit le curseur DANS chaque carte */
+  .carte::after{ content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; opacity:0; transition:opacity .3s ease;
+    background:radial-gradient(260px circle at var(--cx,50%) var(--cy,50%), rgba(47,240,230,.10), transparent 60%); }
+  .carte:hover::after{ opacity:1; }
+  /* wordmark : dégradé animé sur « forge » */
+  h1 .fg{ background:linear-gradient(90deg,#2ff0e6,#9fecff,#2ff0e6); background-size:220% auto;
+    -webkit-background-clip:text; background-clip:text; color:transparent; animation:shimmer 4.5s linear infinite; }
+  @keyframes shimmer{ to{ background-position:220% center } }
+  /* onde qui se propage au clic des boutons */
+  button{ position:relative; overflow:hidden; }
+  .ripple{ position:absolute; border-radius:50%; background:rgba(255,255,255,.35); pointer-events:none;
+    transform:translate(-50%,-50%); animation:ripple .6s ease-out forwards; }
+  @keyframes ripple{ from{ width:0; height:0; opacity:.55 } to{ width:360px; height:360px; opacity:0 } }
+  /* pastilles de statut (jobs, créneaux) : halo respirant */
+  .pastille{ box-shadow:0 0 0 0 currentColor; animation:halo 2.6s ease-in-out infinite; }
+  @keyframes halo{ 0%,100%{ box-shadow:0 0 0 0 rgba(47,240,230,0) } 50%{ box-shadow:0 0 8px 1px rgba(47,240,230,.28) } }
+
+  @media (prefers-reduced-motion:reduce){
+    *, *::before, *::after{ animation-duration:.001s !important; animation-iteration-count:1 !important;
+      transition-duration:.001s !important; }
+    #spotlight, .carte::after{ display:none; }
+  }
+  .cal-sub{ color:var(--sourdine); font-size:13px; }
+  .cal-sub b{ color:var(--texte); font-weight:700; }
+  .cal-legend{ display:flex; flex-wrap:wrap; gap:6px 16px; margin-left:auto; }
+  .cal-legend span{ display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--sourdine); }
+  .cal-legend i{ width:9px; height:9px; border-radius:50%; display:inline-block; }
+
+  /* bandeau série */
+  .cal-serie-feature{ position:relative; border:1px solid var(--rouge); border-radius:14px; padding:16px 18px;
+    margin-bottom:20px; background:linear-gradient(180deg,rgba(254,44,85,.10),transparent 80%),var(--panneau); overflow:hidden; }
+  .cal-serie-feature::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--rouge); }
+  .csf-top{ display:flex; align-items:center; flex-wrap:wrap; gap:8px 12px; margin-bottom:16px; }
+  .csf-badge{ font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; font-weight:700;
+    color:var(--rouge); border:1px solid var(--rouge); border-radius:999px; padding:4px 10px; }
+  .csf-title{ font-family:var(--serif); font-size:20px; color:var(--texte); }
+  .csf-note{ font-size:12.5px; color:var(--sourdine); margin-left:auto; max-width:320px; }
+  .csf-thread{ position:relative; display:grid; grid-template-columns:repeat(3,1fr); gap:0; }
+  .csf-thread::before{ content:""; position:absolute; left:9%; right:9%; top:18px; height:2px;
+    background:linear-gradient(90deg,transparent,var(--rouge) 12%,var(--rouge) 88%,transparent); opacity:.5; }
+  .csf-ep{ text-align:center; padding:0 10px; position:relative; }
+  .csf-node{ width:36px; height:36px; margin:0 auto 12px; border-radius:50%; display:grid; place-items:center;
+    background:var(--panneau); border:2px solid var(--rouge); color:var(--rouge); font-family:var(--mono); font-weight:700;
+    box-shadow:0 0 0 4px var(--panneau); position:relative; z-index:1; }
+  .csf-when{ font-family:var(--mono); font-size:11px; letter-spacing:.05em; color:var(--rouge); font-weight:700; }
+  .csf-part{ font-family:var(--mono); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--sourdine); margin:4px 0 5px; }
+  .csf-line{ font-family:var(--serif); font-style:italic; font-size:13.5px; color:var(--texte); line-height:1.35; }
+
+  /* agenda jour par jour */
+  .cal-week{ display:flex; flex-direction:column; gap:12px; }
+  .cal-day{ display:grid; grid-template-columns:78px 1fr; gap:12px; align-items:stretch; }
+  .cal-date{ display:flex; flex-direction:column; justify-content:center; gap:1px; text-align:center;
+    background:var(--panneau-2); border:1px solid var(--ligne); border-radius:12px; padding:10px 6px; }
+  .cal-date .dow{ font-family:var(--mono); font-size:10px; letter-spacing:.14em; color:var(--sourdine); }
+  .cal-date .dn{ font-family:var(--serif); font-size:26px; line-height:1; color:var(--texte); }
+  .cal-date .mo{ font-family:var(--mono); font-size:9px; letter-spacing:.1em; color:var(--sourdine); text-transform:uppercase; }
+  .cal-date.peak .dn{ color:var(--rouge); }
+  .cal-date .peakf{ margin-top:6px; font-family:var(--mono); font-size:8px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--rouge); border:1px solid var(--rouge); border-radius:999px; padding:2px 5px; }
+  .cal-slots{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; }
+
+  .cal-slot{ position:relative; display:flex; flex-direction:column; gap:8px; padding:13px 14px;
+    background:var(--panneau); border:1px solid var(--ligne); border-left:3px solid var(--sourdine); border-radius:11px; }
+  .cal-slot.r-relatable{ border-left-color:var(--r-relatable); }
+  .cal-slot.r-arnaque{ border-left-color:var(--r-arnaque); }
+  .cal-slot.r-science{ border-left-color:var(--r-science); }
+  .cal-slot.r-mystere{ border-left-color:var(--r-mystere); }
+  .cal-slot.serie{ border:1px solid var(--rouge); border-left:3px solid var(--rouge); }
+  .cal-ribbon{ position:absolute; top:-1px; right:-1px; font-family:var(--mono); font-size:9px; letter-spacing:.1em;
+    text-transform:uppercase; font-weight:700; color:#fff; background:var(--rouge); padding:3px 8px; border-radius:0 11px 0 10px; }
+  .cs-top{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .cs-time{ font-family:var(--mono); font-size:12px; font-weight:700; color:var(--texte);
+    background:var(--panneau-2); border:1px solid var(--ligne); border-radius:6px; padding:2px 7px; }
+  .cs-tag{ font-family:var(--mono); font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; font-weight:700;
+    padding:2px 8px; border-radius:999px; display:inline-flex; align-items:center; gap:5px; }
+  .cs-tag i{ width:6px; height:6px; border-radius:50%; }
+  .cs-title{ font-weight:700; font-size:15px; color:var(--texte); line-height:1.25; }
+  .cs-hook{ font-family:var(--serif); font-style:italic; font-size:13px; color:var(--sourdine); line-height:1.4; margin:0; }
+  .cs-foot{ display:flex; align-items:center; gap:10px; margin-top:auto; padding-top:2px; }
+  .cal-gen{ margin:0; width:auto; flex:none; padding:6px 14px; font-size:12.5px; font-weight:700;
+    background:var(--cyan); color:#08282a; border:0; border-radius:7px; cursor:pointer; }
+  .cal-gen:hover{ filter:brightness(1.08); }
+  .cal-gen:disabled{ opacity:.5; cursor:wait; }
+  .cal-gen.retry{ background:var(--erreur); color:#3a0d0d; }
+  .cal-fait{ margin:0; width:auto; flex:none; padding:6px 12px; font-size:12px; font-weight:600;
+    background:var(--panneau-2); color:var(--sourdine); border:1px solid var(--ligne); border-radius:7px; cursor:pointer; }
+  .cal-fait:hover{ color:var(--texte); border-color:var(--sourdine); }
+  .cal-slot.done{ opacity:.5; }
+  .cal-slot.done:hover{ opacity:1; }
+  .cs-state{ font-family:var(--mono); font-size:11px; letter-spacing:.03em; display:inline-flex; align-items:center; gap:6px; }
+  .cs-state.gen{ color:var(--cyan); } .cs-state.done{ color:var(--ok); } .cs-state.err{ color:var(--erreur); }
+  .cs-state.gen::before{ content:""; width:8px; height:8px; border-radius:50%; background:var(--cyan); animation:pulse 1s infinite; }
+  @keyframes pulse{ 0%,100%{opacity:.3} 50%{opacity:1} }
+  .cal-suppr{ font-size:11.5px; color:var(--sourdine); text-decoration:none; margin-left:auto; }
+  .cal-suppr:hover{ color:var(--erreur); }
+  .cal-controls{ display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; margin-top:18px;
+    padding-top:16px; border-top:1px solid var(--ligne); }
+  .cal-controls .fld{ display:flex; flex-direction:column; gap:4px; }
+  .cal-controls label{ margin:0; }
+  .cal-controls input{ width:auto; }
+  .cal-controls button{ margin:0; width:auto; }
+  @media (max-width:620px){ .cal-day{ grid-template-columns:1fr; } .csf-thread{ grid-template-columns:1fr; gap:16px; } .csf-thread::before{ display:none; } .csf-note{ margin-left:0; } }
+</style>
+</head>
+<body>
+  <div id="spotlight"></div>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div>
+      <h1>Clip<span class="fg">Minute</span></h1>
+      <p class="sous-logo">Régie de production · clips verticaux</p>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <a id="credits" class="credits" href="/offres" title="Crédits de génération">
+        <span class="cr-ic">⚡</span><span class="cr-val">—</span><span class="cr-lbl">crédits</span>
+        <span class="cr-bar"><i></i></span>
+      </a>
+      <a id="abo-badge" href="/offres" title="Mon abonnement / voir les offres"
+         style="text-decoration:none;font-size:12.5px;font-weight:700;color:var(--cyan);border:1px solid var(--ligne);border-radius:999px;padding:6px 13px;background:var(--panneau-2);white-space:nowrap;transition:filter .15s"
+         onmouseover="this.style.filter='brightness(1.25)'" onmouseout="this.style.filter='none'">✦ —</a>
+      <a href="/journal" title="Journal complet" aria-label="Journal"
+         style="font-size:24px;text-decoration:none;filter:grayscale(1);opacity:.75;padding:6px"
+         onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.75">📜</a>
+      <a href="/reglages" title="Réglages" aria-label="Réglages"
+         style="font-size:24px;text-decoration:none;filter:grayscale(1);opacity:.75;padding:6px"
+         onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.75">⚙️</a>
+    </div>
+  </div>
+
+  <div id="maj-bandeau" hidden style="align-items:center;gap:12px;flex-wrap:wrap;background:linear-gradient(90deg,rgba(182,255,58,.10),transparent);border:1px solid var(--cyan);border-radius:10px;padding:10px 14px;margin-bottom:14px"></div>
+  <div id="tiktok-bandeau" hidden></div>
+
+  <div id="pause-bandeau" hidden style="align-items:center;gap:14px;background:#332a12;border:1px solid #b98a1d;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13.5px">
+    <span>⏸ <b>Publication EN PAUSE</b> — les clips s'accumulent en « prêt à publier », rien ne part sur TikTok.</span>
+    <button type="button" id="btn-pause" style="margin:0;width:auto;padding:6px 14px;font-size:13px">Reprendre la publication</button>
+  </div>
+
+  <div id="alertes" hidden style="align-items:center;gap:12px;flex-wrap:wrap;background:#3a1520;border:1px solid var(--rouge);border-radius:10px;padding:10px 14px;margin-bottom:18px;font-size:13.5px">
+    <span id="alertes-texte" style="flex:1;min-width:200px"></span>
+    <a href="/journal" style="color:var(--texte);white-space:nowrap">Voir le journal</a>
+    <button type="button" id="alertes-lu" style="margin:0;width:auto;padding:6px 12px;font-size:12.5px;background:var(--panneau-2);color:var(--texte);border:1px solid var(--ligne)">OK, lu</button>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div id="modal-bio" hidden style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:50;align-items:center;justify-content:center;padding:20px">
+    <div style="background:var(--panneau);border:1px solid var(--ligne);border-radius:14px;padding:20px;width:min(560px,100%)">
+      <h2>Bio du clip</h2>
+      <p class="indication" style="margin-bottom:8px">Préremplie selon les bonnes pratiques de l'algorithme (accroche à commentaires, mots-clés, hashtags larges + niche). Modifie librement, puis enregistre.</p>
+      <textarea id="bio-texte" style="min-height:140px"></textarea>
+      <div style="display:flex;gap:10px;margin-top:12px">
+        <button type="button" id="bio-enregistrer" style="margin:0;flex:1">Enregistrer la bio</button>
+        <button type="button" id="bio-copier" style="margin:0;flex:1;background:var(--panneau-2);color:var(--texte);border:1px solid var(--ligne)">Copier</button>
+        <button type="button" id="bio-fermer" style="margin:0;width:90px;background:var(--panneau-2);color:var(--texte);border:1px solid var(--ligne)">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-boost" hidden style="position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:60;align-items:center;justify-content:center;padding:20px">
+    <div style="background:var(--panneau);border:1px solid var(--ligne);border-radius:14px;padding:20px;width:min(460px,100%)">
+      <h2>📌 2 minutes pour booster ce clip</h2>
+      <p style="color:var(--sourdine);font-size:13px;margin:6px 0 12px">Les 3 gestes que l'algorithme récompense le plus, à faire dans l'appli TikTok juste après la publication :</p>
+      <ol style="line-height:1.9;margin:0 0 14px 18px">
+        <li><strong>Épingle un commentaire question</strong> qui divise (ex. « Team ça s'explique / team inexplicable ? ») — le commentaire est le signal n°1.</li>
+        <li><strong>Réponds aux 3 premiers commentaires</strong> dans l'heure — chaque réponse relance la distribution.</li>
+        <li>Si c'est un <strong>brouillon</strong> : ajoute un <strong>son tendance</strong> à faible volume avant de publier.</li>
+      </ol>
+      <button type="button" id="boost-ok" class="ok" style="width:100%">C'est fait (ou plus tard)</button>
+    </div>
+  </div>
+  <div id="modal-hooks" hidden style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:58;align-items:center;justify-content:center;padding:20px">
+    <div style="background:var(--panneau);border:1px solid var(--ligne);border-radius:16px;padding:22px;width:min(640px,100%);max-height:90vh;overflow:auto">
+      <h2 style="margin:0 0 4px">✨ Choisis ton accroche</h2>
+      <p class="indication" style="margin:0 0 4px">3 angles pour le même sujet — la 1re seconde décide de tout. L'IA écrira ensuite le script <b>autour</b> de ton choix.</p>
+      <p id="hooks-sujet" style="font-size:12px;color:var(--sourdine);margin:0 0 10px;font-style:italic"></p>
+      <div id="hooks-liste"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+        <button type="button" id="hooks-regen" style="margin:0;background:var(--panneau-2);color:var(--texte);border:1px solid var(--ligne)">↻ Autres accroches</button>
+        <button type="button" id="hooks-skip" style="margin:0;background:var(--panneau-2);color:var(--texte);border:1px solid var(--ligne)">Laisser l'IA décider</button>
+        <button type="button" id="hooks-annuler" style="margin:0;background:transparent;color:var(--sourdine);border:1px solid var(--ligne)">Annuler</button>
+        <button type="button" id="hooks-valider" disabled style="margin:0;flex:1;min-width:170px;opacity:.5">Générer avec cette accroche</button>
+      </div>
+    </div>
+  </div>
+  <div id="modal-tiktok" hidden style="position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:55;align-items:center;justify-content:center;padding:20px">
+    <div style="background:var(--panneau);border:1px solid var(--ligne);border-radius:14px;padding:20px;width:min(520px,100%);max-height:90vh;overflow:auto">
+      <h2>Publier sur TikTok</h2>
+      <div style="display:flex;align-items:center;gap:12px;margin:12px 0">
+        <img id="tt-avatar" alt="" style="width:46px;height:46px;border-radius:50%;background:var(--panneau-2);object-fit:cover">
+        <div><div id="tt-pseudo" style="font-weight:600">…</div>
+          <div style="font-size:12px;color:var(--sourdine)">Compte connecté</div></div>
+      </div>
+      <label for="tt-caption">Légende</label>
+      <textarea id="tt-caption" style="min-height:90px"></textarea>
+      <label for="tt-privacy">Qui peut voir cette vidéo ?</label>
+      <select id="tt-privacy"><option value="">— choisis —</option></select>
+      <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:12px">
+        <label class="tt-chk"><input type="checkbox" id="tt-comment" checked> Commentaires</label>
+        <label class="tt-chk"><input type="checkbox" id="tt-duet"> Duo</label>
+        <label class="tt-chk"><input type="checkbox" id="tt-stitch"> Couture</label>
+      </div>
+      <div style="margin-top:12px;border-top:1px solid var(--ligne);padding-top:10px">
+        <label class="tt-chk"><input type="checkbox" id="tt-commercial"> Divulguer un contenu commercial</label>
+        <div id="tt-commercial-opts" hidden style="margin:8px 0 0 24px">
+          <label class="tt-chk"><input type="checkbox" id="tt-marque"> Votre marque (promotion de toi-même ou de ton activité)</label><br>
+          <label class="tt-chk"><input type="checkbox" id="tt-branded"> Contenu de marque (partenariat rémunéré avec un tiers)</label>
+        </div>
+      </div>
+      <p id="tt-note" class="indication" style="margin-top:10px"></p>
+      <p id="tt-declaration" class="indication" style="margin-top:6px">En publiant, tu confirmes respecter la <a href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en" target="_blank" style="color:var(--cyan)">Confirmation d'usage musical</a> de TikTok.</p>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button type="button" id="tt-direct" style="margin:0;flex:1">Publier maintenant</button>
+        <button type="button" id="tt-draft" style="margin:0;flex:1;background:var(--panneau-2);color:var(--texte);border:1px solid var(--ligne)">Envoyer en brouillon</button>
+        <button type="button" id="tt-fermer" style="margin:0;width:90px;background:var(--panneau-2);color:var(--texte);border:1px solid var(--ligne)">Fermer</button>
+      </div>
+      <p class="indication" style="margin-top:8px">Contenu publié via l'API TikTok, avec ton autorisation. Rien n'est publié sans ce bouton.</p>
+    </div>
+  </div>
+
+  <!-- STATS & KPI en haut, pleine largeur -->
+  <section class="carte cal-full" id="perf-top">
+    <div class="cal-head"><h2>Performance</h2>
+      <button type="button" id="btn-sync-stats" style="margin:0;width:auto;padding:5px 12px;font-size:12.5px;background:var(--panneau-2);color:var(--texte);border:1px solid var(--ligne)">Synchroniser les stats</button></div>
+    <div id="kpi-compte" class="kpis" style="grid-template-columns:repeat(auto-fit, minmax(110px, 1fr));margin-bottom:10px"></div>
+    <div id="graphes"></div>
+    <div id="info-graphe" hidden style="position:fixed;z-index:60;background:#000;border:1px solid var(--ligne);border-radius:8px;padding:7px 10px;font-size:12.5px;pointer-events:none;white-space:nowrap"></div>
+    <div id="rapports" class="vide" style="margin-top:12px">Aucun rapport hebdo pour l'instant (généré chaque dimanche).</div>
+    <p class="indication">Les vues/likes s'affichent sur chaque clip publié. Sync auto quotidienne à 6h.</p>
+  </section>
+
+  <!-- CALENDRIER pleine largeur, repliable -->
+  <section class="carte cal-full" id="cal-section">
+    <div class="cal-head">
+      <button type="button" id="cal-toggle" class="cal-toggle" aria-expanded="true" title="Replier / déplier">▾</button>
+      <h2 id="cal-title" style="cursor:pointer;user-select:none">Calendrier éditorial</h2>
+      <span class="cal-sub" id="cal-sub"></span>
+      <div class="cal-legend">
+        <span><i style="background:var(--r-relatable)"></i>Relatable</span>
+        <span><i style="background:var(--r-arnaque)"></i>Arnaque</span>
+        <span><i style="background:var(--r-science)"></i>Science</span>
+        <span><i style="background:var(--r-mystere)"></i>Mystère / Série</span>
+      </div>
+    </div>
+    <div id="cal-body">
+      <div id="trends-panel" class="trends-panel" hidden></div>
+      <div id="calendrier"><p class="vide">Aucun créneau planifié.</p></div>
+      <form id="form-creneau" class="cal-controls">
+        <div class="fld"><label for="creneau-quand">Nouveau créneau</label>
+          <input type="datetime-local" id="creneau-quand" required></div>
+        <div class="fld" style="flex:1;min-width:220px"><label for="creneau-sujet">Sujet</label>
+          <input type="text" id="creneau-sujet" placeholder="Sujet (vide = aléatoire)"></div>
+        <button type="submit">Ajouter</button>
+        <button type="button" id="btn-semaine" style="background:var(--panneau-2);color:var(--texte);border:1px solid var(--ligne)">Proposer des sujets tendance (IA)</button>
+      </form>
+      <p class="indication" style="margin-top:10px">« Générer » lance la production du clip <b>tout de suite</b>. Quand la file éditoriale est vide, l'IA recharge automatiquement le calendrier avec des sujets anglés sur les tendances du jour. Jamais deux publications à moins de 4 h.</p>
+    </div>
+  </section>
+
+  <div class="grille">
+    <div>
+      <section class="carte">
+        <h2>Tâches</h2>
+        <div id="jobs"><p class="vide">Aucune tâche pour l'instant.</p></div>
+      </section>
+
+      <section class="carte">
+        <h2>Nouveau clip IA</h2>
+        <form id="form-generer">
+          <label for="profil">Profil / chaîne</label>
+          <div style="display:flex;gap:8px">
+            <select id="profil" style="flex:1"></select>
+            <button type="button" id="btn-nouveau-profil" title="Créer un profil"
+                    style="margin:0;width:44px;background:var(--panneau-2);color:var(--texte);border:1px solid var(--ligne)">+</button>
+          </div>
+          <label for="sujet">Sujet (vide = sujet aléatoire du profil)</label>
+          <input type="text" id="sujet" placeholder="ex. une arnaque célèbre expliquée simplement">
+          <details style="margin:8px 0">
+            <summary style="cursor:pointer;color:var(--cyan);font-size:13px">💬 Répondre à un commentaire (format viral)</summary>
+            <label for="gen-comment-auteur" style="margin-top:8px">Pseudo de l'auteur</label>
+            <input type="text" id="gen-comment-auteur" placeholder="ex. lucas_92">
+            <label for="gen-comment">Commentaire reçu</label>
+            <textarea id="gen-comment" style="min-height:60px" placeholder="Colle ici le commentaire — il s'affichera en bulle et la vidéo y répondra"></textarea>
+            <p class="indication">Si rempli : le sujet est ignoré, l'usine génère une vidéo qui RÉPOND à ce commentaire.</p>
+          </details>
+          <label for="mots">Longueur de l'histoire</label>
+          <select id="mots">
+            <option value="520" selected>~3 minutes → série en 3 parties (défaut)</option>
+            <option value="700">~4 minutes → série en 4 parties</option>
+            <option value="880">~5 minutes → série en 5 parties</option>
+            <option value="175">~1 minute (clip unique)</option>
+            <option value="90">~30 secondes (clip unique)</option>
+          </select>
+          <button type="submit">Générer le clip</button>
+          <p class="indication">Le fond vidéo change à chaque scène de l'histoire. Au-delà de 1 min 30, l'histoire est automatiquement découpée en parties de ~1 minute (PARTIE X/N).</p>
+        </form>
+      </section>
+
+
+      <section class="carte">
+        <h2>Thème du compte</h2>
+        <form id="form-theme">
+          <label for="theme">Ligne éditoriale du profil sélectionné — pilote le rédacteur en chef IA et le ton des scripts</label>
+          <textarea id="theme" placeholder="ex. thread horreur et histoires vraies qui donnent des frissons"></textarea>
+          <button type="submit">Enregistrer le thème</button>
+        </form>
+      </section>
+
+      <section class="carte">
+        <h2>Découper une vidéo</h2>
+        <form id="form-decouper">
+          <label for="fichier">Fichier vidéo (reportage, stream… jusqu'à 8 Go)</label>
+          <input type="file" id="fichier" accept="video/*">
+          <label for="lien-yt">…ou lien YouTube (téléchargé automatiquement, ⚠️ droits d'auteur sous ta responsabilité)</label>
+          <input type="text" id="lien-yt" placeholder="https://www.youtube.com/watch?v=…">
+          <label for="titre">Titre de la série</label>
+          <input type="text" id="titre" placeholder="ex. Ce reportage est fou">
+          <label for="duree">Durée d'une partie</label>
+          <select id="duree">
+            <option value="45">~45 secondes</option>
+            <option value="60" selected>~1 minute</option>
+            <option value="90">~1 min 30</option>
+          </select>
+          <label for="bestof">Stratégie</label>
+          <select id="bestof">
+            <option value="">Tout découper (série PARTIE X/N)</option>
+            <option value="3">3 meilleurs moments (choisis par l'IA)</option>
+            <option value="5">5 meilleurs moments (choisis par l'IA)</option>
+          </select>
+          <button type="submit">Lancer la découpe</button>
+          <div class="jauge" id="jauge-upload" hidden><div style="width:0%"></div></div>
+          <p class="indication">Transcription Whisper puis découpe aux pauses de parole, sous-titres synchronisés et bandeau « PARTIE X/N ». Pour 1 h 30 de vidéo, compter environ 1 h de traitement — la progression s'affiche dans les tâches.</p>
+        </form>
+      </section>
+
+    </div>
+
+    <div>
+      <h2>À publier &amp; historique</h2>
+      <p id="a-publier-compte" style="margin:-6px 0 12px"></p>
+      <div class="clips" id="clips"><p class="vide">Aucun clip pour l'instant — lance une génération à gauche.</p></div>
+    </div>
+  </div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+let jobsActifs = 0;
+
+const STATUTS = {
+  en_attente: "en attente", planifie: "publication planifiée",
+  pret_a_publier: "prêt à publier (service TikTok non branché)",
+  publie: "✅ publié", echec: "⚠️ échec de publication",
+};
+function libelleStatut(c) {
+  let s = STATUTS[c.statut] || c.statut;
+  if (c.statut === "planifie" && c.publication_prevue) s += " " + c.publication_prevue;
+  return s;
+}
+
+let THEMES = {};
+async function chargerConfig() {
+  const cfg = await (await fetch("/api/config")).json();
+  THEMES = cfg.themes || {};
+  $("#profil").innerHTML = cfg.profils.map((p) =>
+    `<option value="${p}" ${p === cfg.profil_defaut ? "selected" : ""}>${p}</option>`).join("");
+  $("#theme").value = THEMES[$("#profil").value] || "";
+}
+
+async function majKpi() {
+  const k = await (await fetch("/api/kpi")).json();
+  $("#pause-bandeau").hidden = !k.pause;
+  // vues : TikTok ne donne pas les vues par vidéo avant l'audit (scope video.list) —
+  // on affiche donc le chiffre SUIVI avec sa couverture et sa date, jamais un faux total.
+  const v = (k.vues && typeof k.vues === "object") ? k.vues : { vues: k.vues || 0 };
+  const vDetail = v.posts_suivis
+    ? v.posts_suivis + "/" + (v.videos_compte ?? "?") + " vidéos · relevé " + (v.maj || "—")
+    : "en attente du premier relevé";
+  $("#kpis").innerHTML = `
+    <div class="kpi"><b>${k.taches_actives}</b><span>tâches en cours</span></div>
+    <div class="kpi"><b>${k.en_attente}</b><span>clips prêts à publier</span><em>${k.planifies ? k.planifies + " planifiés" : "sur " + k.produits + " produits"}</em></div>
+    <div class="kpi"><b>${k.publies}</b><span>publiés</span><em>${k.posts_jour}/${k.max_posts_jour} aujourd'hui</em></div>
+    <div class="kpi"><b>${v.vues}</b><span>vues du compte</span><em>${vDetail}</em></div>
+    <div class="kpi"><b>${k.prochain_creneau ? k.prochain_creneau.slice(5, 16) : "—"}</b><span>prochain créneau</span><em>${k.creneaux} à venir</em></div>`;
+  if (k.compte) {
+    $("#kpi-compte").innerHTML = `
+      <div class="kpi"><b>${k.compte.abonnes}</b><span>abonnés</span><em>${k.compte.releve_a ? "relevé " + k.compte.releve_a + " · page publique TikTok" : ""}</em></div>
+      <div class="kpi"><b>${k.compte.likes}</b><span>likes</span></div>
+      <div class="kpi"><b>${k.compte.videos}</b><span>vidéos</span><em>compteur officiel TikTok — retarde parfois de plusieurs heures</em></div>
+      <div class="kpi"><b>${k.compte.abonnes_gagnes_30j >= 0 ? "+" : ""}${k.compte.abonnes_gagnes_30j}</b><span>abonnés / 30 j</span></div>`;
+  }
+}
+
+let STATS = {};
+async function majStats() {
+  const s = await (await fetch("/api/stats")).json();
+  STATS = s.par_fichier || {};
+}
+
+const CAL_REG = { relatable:{v:"--r-relatable",l:"Relatable"}, arnaque:{v:"--r-arnaque",l:"Arnaque"},
+  science:{v:"--r-science",l:"Science"}, mystere:{v:"--r-mystere",l:"Mystère"}, neutre:{v:"--sourdine",l:"Divers"} };
+const CAL_DOW = ["DIM","LUN","MAR","MER","JEU","VEN","SAM"];
+const CAL_MON = ["janv","févr","mars","avr","mai","juin","juil","août","sept","oct","nov","déc"];
+// Échappement HTML — couvre AUSSI les guillemets : sans eux, une valeur insérée dans
+// un attribut (data-…="…") permettrait d'en sortir et d'injecter un gestionnaire d'événement.
+const calEsc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g,
+  (m) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
+function calInfere(s) { s = (s || "").toLowerCase();
+  if (/arnaqu|escroc|brushing|spoofing|clonage|conseiller bancaire|phishing/.test(s)) return "arnaque";
+  if (/partie\s*\d|roanoke|myst[eè]|colonie|kryptos|headroom|disparition|non r[ée]solu/.test(s)) return "mystere";
+  if (/effet|cerveau|neuro|millisecond|angle mort|cervelet|dunning|science|sommeil|paralysie/.test(s)) return "science";
+  return "relatable"; }
+function calParse(c) {
+  const sujet = c.sujet || "";
+  const m = sujet.match(/PARTIE\s*(\d+)\s*\/\s*(\d+)/i);
+  let titre = sujet.split(" : ")[0].replace(/\s*[-–]\s*PARTIE\s*\d+\s*\/\s*\d+/i, "").trim();
+  if (titre.length > 62) titre = titre.slice(0, 60) + "…";
+  let hook = sujet.includes(" : ") ? sujet.split(" : ").slice(1).join(" : ").split(/\.\s/)[0].trim() : "";
+  if (hook.length > 120) hook = hook.slice(0, 118) + "…";
+  return { titre, hook, part: m ? [+m[1], +m[2]] : null, reg: c.registre || calInfere(sujet), serie: !!(c.serie || m) };
+}
+function calCard(c) {
+  const p = calParse(c), reg = CAL_REG[p.reg] || CAL_REG.neutre, t = c.quand.slice(11, 16);
+  const ribbon = p.part ? `<span class="cal-ribbon">Série · ${p.part[0]}/${p.part[1]}</span>` : "";
+  let action, suppr = "", done = "";
+  if (c.statut === "generation") { action = `<span class="cs-state gen">génération…</span>`; suppr = `<a href="#" class="cal-suppr" data-prevu-creneau="${c.id}" title="La génération a planté (PC éteint) ? Reviens à « à générer »">débloquer</a>`; }
+  else if (c.statut === "genere") { action = `<span class="cs-state done">✓ généré</span>`; done = " done"; }
+  else if (c.statut === "fait") { action = `<span class="cs-state done">✓ fait</span>`; suppr = `<a href="#" class="cal-suppr" data-prevu-creneau="${c.id}">rétablir</a>`; done = " done"; }
+  else if (c.statut === "erreur") { action = `<button class="cal-gen retry" data-gen-creneau="${c.id}" data-sujet="${encodeURIComponent(c.sujet || "")}">réessayer</button><span class="cs-state err">échec</span>`; suppr = `<a href="#" class="cal-suppr" data-creneau-suppr="${c.id}">retirer</a>`; }
+  else { action = `<button class="cal-gen" data-gen-creneau="${c.id}" data-sujet="${encodeURIComponent(c.sujet || "")}">générer</button><button class="cal-fait" data-fait-creneau="${c.id}" title="Marquer comme déjà fait, sans générer">✓ fait</button>`; suppr = `<a href="#" class="cal-suppr" data-creneau-suppr="${c.id}">retirer</a>`; }
+  return `<div class="cal-slot r-${p.reg}${p.serie ? " serie" : ""}${done}">${ribbon}
+    <div class="cs-top"><span class="cs-time">${t}</span>
+      <span class="cs-tag" style="color:var(${reg.v})"><i style="background:var(${reg.v})"></i>${reg.l}</span></div>
+    <div class="cs-title">${calEsc(p.titre)}</div>
+    ${p.hook ? `<p class="cs-hook">« ${calEsc(p.hook)} »</p>` : ""}
+    <div class="cs-foot">${action}${suppr}</div></div>`;
+}
+async function majCalendrier() {
+  const creneaux = await (await fetch("/api/calendrier")).json();
+  const zone = $("#calendrier"), sub = $("#cal-sub");
+  const now = new Date();
+  const today = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
+  const show = creneaux.filter((c) => ["prevu", "generation", "genere", "erreur", "fait"].includes(c.statut) && (c.quand || "").slice(0, 10) >= today)
+    .sort((a, b) => a.quand.localeCompare(b.quand));
+  if (!show.length) { zone.innerHTML = '<p class="vide">Aucun créneau à venir. Ajoute un créneau ou lance « Planifier la semaine ».</p>'; if (sub) sub.textContent = ""; return; }
+
+  // bandeau « série de la semaine »
+  const serieSlots = show.filter((c) => calParse(c).part).sort((a, b) => calParse(a).part[0] - calParse(b).part[0]);
+  let banner = "";
+  if (serieSlots.length >= 2) {
+    const base = calParse(serieSlots[0]).titre;
+    const serieNom = serieSlots[0].serie || base;
+    const aGen = serieSlots.filter((c) => c.statut === "prevu").length;
+    const btnSerie = aGen ? `<button class="cal-gen" data-gen-serie="${calEsc(serieNom)}">Générer les ${aGen} parties</button>` : "";
+    banner = `<div class="cal-serie-feature"><div class="csf-top">
+      <span class="csf-badge">◆ Série de la semaine</span><span class="csf-title">${calEsc(base)}</span>
+      <span class="csf-note"><b>1 partie/jour</b>, chacune finit sur un cliffhanger → « abonne-toi pour la suite ».</span>${btnSerie}</div>
+      <div class="csf-thread">${serieSlots.map((c) => { const p = calParse(c), dt = new Date(c.quand.slice(0, 10) + "T12:00");
+        return `<div class="csf-ep"><div class="csf-node">${p.part[0]}</div>
+          <div class="csf-when">${CAL_DOW[dt.getDay()]} ${c.quand.slice(8, 10)} · ${c.quand.slice(11, 16)}</div>
+          <div class="csf-part">Partie ${p.part[0]} / ${p.part[1]}</div>
+          <p class="csf-line">« ${calEsc(p.hook)} »</p></div>`; }).join("")}</div></div>`;
+  }
+
+  // agenda groupé par jour
+  const jours = [];
+  for (const c of show) { const d = c.quand.slice(0, 10); const g = jours.find((x) => x[0] === d); if (g) g[1].push(c); else jours.push([d, [c]]); }
+  const semaine = jours.map(([d, slots]) => {
+    const dt = new Date(d + "T12:00"), sun = dt.getDay() === 0;
+    return `<div class="cal-day"><div class="cal-date${sun ? " peak" : ""}">
+      <span class="dow">${CAL_DOW[dt.getDay()]}</span><span class="dn">${d.slice(8, 10)}</span><span class="mo">${CAL_MON[+d.slice(5, 7) - 1]}</span>
+      ${sun ? '<span class="peakf">pic</span>' : ""}</div>
+      <div class="cal-slots">${slots.map(calCard).join("")}</div></div>`;
+  }).join("");
+
+  zone.innerHTML = banner + `<div class="cal-week">${semaine}</div>`;
+  if (sub) sub.textContent = `${show.length} clips · ${jours.length} jours · 2/jour à 12h30 & 20h`;
+}
+
+async function majAlertes() {
+  const j = await (await fetch("/api/journal")).json();
+  const zone = $("#alertes");
+  if (!j.alertes.length) { zone.hidden = true; return; }
+  const derniere = j.alertes[0];
+  zone.hidden = false;
+  $("#alertes-texte").textContent = `⚠️ ${j.alertes.length} alerte(s) non lue(s) — dernière : [${derniere.quand}] ${derniere.evenement} ${(derniere.detail || derniere.raison || derniere.erreur || "").slice(0, 160)}`;
+}
+
+function duree(s) {
+  const m = Math.floor(s / 60);
+  return m ? m + " min " + (s % 60) + " s" : s + " s";
+}
+
+async function majJobs() {
+  const jobs = await (await fetch("/api/jobs")).json();
+  const zone = $("#jobs");
+  if (!jobs.length) { zone.innerHTML = '<p class="vide">Aucune tâche pour l\'instant.</p>'; return; }
+  zone.innerHTML = jobs.map((j) => `
+    <div class="job ${j.statut}">
+      <div class="job-titre"><span class="pastille"></span>
+        <span>${j.label}</span>
+        ${j.statut === "en_cours"
+          ? `<button type="button" class="job-annuler" data-annuler="${j.id}">Annuler</button>`
+          : `<button type="button" class="job-annuler" data-suppr-job="${j.id}" title="Retirer de la liste">✕</button>`}
+      </div>
+      <div class="job-log">${j.statut === "erreur" ? "Échec — voir le journal : " : (j.statut === "annulee" ? "Annulée · " : "")}${j.log || ""} · ${duree(j.ecoule)}</div>
+      ${j.progression !== null && j.statut === "en_cours" ? `<div class="jauge"><div style="width:${j.progression}%"></div></div>` : ""}
+    </div>`).join("");
+  const actifs = jobs.filter((j) => j.statut === "en_cours").length;
+  if (actifs < jobsActifs) majClips(); // une tâche vient de finir -> rafraîchir l'historique
+  jobsActifs = actifs;
+}
+
+async function majTiktok() {
+  const e = await (await fetch("/api/tiktok/etat")).json();
+  const b = $("#tiktok-bandeau");
+  b.hidden = false;
+  if (!e.configure) {
+    b.innerHTML = `<span>🎵 <b>TikTok</b> — colle ta Client Key + Secret dans <a href="/reglages" style="color:var(--cyan)">Réglages</a> pour activer la publication native.</span>`;
+  } else if (!e.connecte) {
+    b.innerHTML = `<span>🎵 <b>TikTok</b> — app configurée (${calEsc(e.mode)}).</span> <a href="#" onclick="connecterTiktok();return false" style="margin-left:auto;background:var(--cyan);color:#08131a;text-decoration:none;font-weight:700;padding:7px 14px;border-radius:8px">Connecter mon compte</a>`;
+  } else {
+    const c = e.compte || {};
+    b.innerHTML = `<img src="${c.avatar || ""}" alt="" style="width:28px;height:28px;border-radius:50%;background:var(--panneau-2)"> <span>Connecté : <b>${c.pseudo || "—"}</b> (${e.mode})</span> <button type="button" id="tt-deco" style="margin:0;margin-left:auto;width:auto;padding:6px 12px;font-size:12.5px;background:var(--panneau-2);color:var(--texte);border:1px solid var(--ligne)">Déconnecter</button>`;
+  }
+}
+
+let TT_FICHIER = null;
+$("#tt-commercial").addEventListener("change", (e) => {
+  $("#tt-commercial-opts").hidden = !e.target.checked;
+  majDeclarationTiktok();
+});
+["tt-marque", "tt-branded"].forEach((id) => document.addEventListener("change", (e) => {
+  if (e.target.id === id) majDeclarationTiktok();
+}));
+
+function majDeclarationTiktok() {
+  // exigence UX TikTok : la déclaration s'adapte au type de contenu commercial
+  const commercial = $("#tt-commercial").checked;
+  const branded = commercial && $("#tt-branded").checked;
+  const musique = '<a href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en" target="_blank" style="color:var(--cyan)">Confirmation d\'usage musical</a>';
+  const bc = '<a href="https://www.tiktok.com/legal/page/global/bc-policy/en" target="_blank" style="color:var(--cyan)">Politique de contenu de marque</a>';
+  $("#tt-declaration").innerHTML = branded
+    ? `En publiant, tu confirmes respecter la ${bc} et la ${musique} de TikTok.`
+    : `En publiant, tu confirmes respecter la ${musique} de TikTok.`;
+  // contenu de marque : la visibilité "moi uniquement" est interdite par TikTok
+  const privSelf = [...$("#tt-privacy").options].find((o) => o.value === "SELF_ONLY");
+  if (privSelf) {
+    privSelf.disabled = branded;
+    if (branded && $("#tt-privacy").value === "SELF_ONLY") $("#tt-privacy").value = "";
+  }
+}
+
+async function ouvrirTiktok(fichier, titre) {
+  const etat = await (await fetch("/api/tiktok/etat")).json();
+  if (!etat.configure) { alert("Renseigne d'abord ta Client Key + Secret TikTok dans Réglages."); return; }
+  if (!etat.connecte) { if (confirm("Connecte d'abord ton compte TikTok. Ouvrir la connexion ?")) connecterTiktok(); return; }
+  TT_FICHIER = fichier;
+  $("#tt-caption").value = titre || "";
+  $("#modal-tiktok").hidden = false;
+  $("#tt-note").textContent = "Chargement des options du compte…";
+  $("#tt-privacy").innerHTML = '<option value="">— choisis —</option>';
+  const info = await (await fetch("/api/tiktok/creator")).json();
+  if (info.erreur) { $("#tt-note").textContent = "⚠️ " + info.erreur; return; }
+  $("#tt-avatar").src = info.creator_avatar_url || "";
+  $("#tt-pseudo").textContent = info.creator_nickname || info.creator_username || "Mon compte";
+  const libelle = { PUBLIC_TO_EVERYONE: "Public", MUTUAL_FOLLOW_FRIENDS: "Amis", FOLLOWER_OF_CREATOR: "Abonnés", SELF_ONLY: "Moi uniquement (privé)" };
+  (info.privacy_level_options || ["SELF_ONLY"]).forEach((p) => {
+    const o = document.createElement("option"); o.value = p; o.textContent = libelle[p] || p; $("#tt-privacy").appendChild(o);
+  });
+  // conformité UX : commentaires/duo/couture désactivés si le compte l'interdit
+  $("#tt-comment").disabled = !!info.comment_disabled; if (info.comment_disabled) $("#tt-comment").checked = false;
+  $("#tt-duet").disabled = !!info.duet_disabled; if (info.duet_disabled) $("#tt-duet").checked = false;
+  $("#tt-stitch").disabled = !!info.stitch_disabled; if (info.stitch_disabled) $("#tt-stitch").checked = false;
+  const max = info.max_video_post_duration_sec;
+  $("#tt-note").textContent = max ? `Durée max autorisée par ton compte : ${max}s. Choisis la confidentialité avant de publier.` : "Choisis la confidentialité avant de publier.";
+}
+
+async function tiktokPublier(mode) {
+  if (mode === "direct" && !$("#tt-privacy").value) { alert("Choisis d'abord qui peut voir la vidéo."); return; }
+  const r = await fetch("/api/tiktok/publier", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ fichier: TT_FICHIER, mode, titre: $("#tt-caption").value,
+      privacy: $("#tt-privacy").value, comment: $("#tt-comment").checked,
+      duet: $("#tt-duet").checked, stitch: $("#tt-stitch").checked }) });
+  const d = await r.json();
+  if (!r.ok) { alert("Échec : " + d.erreur); return; }
+  // l'envoi tourne en tâche de fond : on ferme le popup et on montre la tâche
+  $("#modal-tiktok").hidden = true;
+  majJobs();
+  $("#modal-boost").hidden = false;  // checklist « 2 min pour booster »
+}
+
+async function majClips() {
+  const clips = await (await fetch("/api/historique")).json();
+  const zone = $("#clips");
+  if (!clips.length) { zone.innerHTML = '<p class="vide">Aucun clip pour l\'instant — lance une génération à gauche.</p>'; return; }
+  const aPublier = clips.filter((c) => c.statut !== "publie").length;
+  $("#a-publier-compte").textContent = aPublier ? `${aPublier} clip(s) à publier` : "Tout est publié ✓";
+  zone.innerHTML = clips.map((c) => {
+    const publie = c.statut === "publie";
+    // flux semi-auto : télécharger + copier la bio + marquer publié (sauf si déjà publié)
+    const actionsManuelles = publie ? "" : `
+        <div class="clip-actions">
+          <a class="btn-tele" href="/telecharger/${encodeURIComponent(c.fichier)}" download>⬇ Télécharger</a>
+          <button type="button" data-bio="${encodeURIComponent(c.fichier)}" data-bio-texte="${encodeURIComponent(c.caption || "")}">Bio (copier/éditer)</button>
+        </div>
+        ${(c.reroll_dispo || c.sujet_reroll) ? `<div class="clip-actions">
+          ${c.reroll_dispo ? `<button type="button" data-reroll-fonds="${encodeURIComponent(c.fichier)}" title="Rejoue d'autres vidéos de fond en gardant la voix et les sous-titres (rapide)">↻ Autres fonds</button>` : ""}
+          ${c.sujet_reroll ? `<button type="button" data-reroll-hook="${encodeURIComponent(c.sujet_reroll)}" title="Nouveau clip sur le même sujet avec une autre accroche">↻ Autre accroche</button>` : ""}
+        </div>` : ""}
+        <div class="clip-actions">
+          <button type="button" data-tiktok="${encodeURIComponent(c.fichier)}" data-tiktok-titre="${encodeURIComponent(c.caption || c.titre || "")}">Publier sur TikTok</button>
+          <button type="button" class="ok" data-publie-manuel="${encodeURIComponent(c.fichier)}">✓ J'ai publié</button>
+        </div>
+        <div class="clip-actions">
+          <button type="button" class="danger" data-suppr="${encodeURIComponent(c.fichier)}">Supprimer</button>
+        </div>`;
+    return `
+    <div class="clip ${publie ? "" : "a-publier"}">
+      <video src="/media/${encodeURIComponent(c.fichier)}" poster="/thumb/${encodeURIComponent(c.fichier)}" controls preload="none"></video>
+      <div class="clip-infos">
+        <div class="clip-titre">${calEsc(c.titre || c.fichier)}</div>
+        <div class="clip-meta">${c.cree_le || ""} · ${c.taille_mo} Mo · ${libelleStatut(c)}${STATS[c.fichier] ? ` · 👁 ${STATS[c.fichier].vues} vues · ❤ ${STATS[c.fichier].likes}` : ""}</div>
+        ${actionsManuelles || `<div class="clip-actions"><button type="button" data-bio="${encodeURIComponent(c.fichier)}" data-bio-texte="${encodeURIComponent(c.caption || "")}">Voir la bio</button><button type="button" class="danger" data-suppr="${encodeURIComponent(c.fichier)}">Supprimer</button></div>`}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+$("#alertes-lu").addEventListener("click", async () => {
+  await fetch("/api/journal/lu", { method: "POST" });
+  majAlertes();
+});
+
+document.addEventListener("click", async (e) => {
+  const annuler = e.target.closest("[data-annuler]");
+  if (annuler && confirm("Annuler cette tâche en cours ?")) {
+    const r = await fetch("/api/jobs/annuler", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: annuler.dataset.annuler }) });
+    if (!r.ok) alert((await r.json()).erreur);
+    majJobs();
+    return;
+  }
+  const supprJob = e.target.closest("[data-suppr-job]");
+  if (supprJob) {
+    const r = await fetch("/api/jobs/supprimer", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: supprJob.dataset.supprJob }) });
+    if (!r.ok) alert((await r.json()).erreur);
+    majJobs();
+    return;
+  }
+  const pub = e.target.closest("[data-publier]");
+  if (pub) {
+    const r = await (await fetch("/api/publier", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fichier: decodeURIComponent(pub.dataset.publier) }) })).json();
+    alert(r.ok ? "Publié : " + r.message : r.message);
+    majClips(); majAlertes();
+    return;
+  }
+  const tk = e.target.closest("[data-tiktok]");
+  if (tk) { ouvrirTiktok(decodeURIComponent(tk.dataset.tiktok), decodeURIComponent(tk.dataset.tiktokTitre)); return; }
+  const rf = e.target.closest("[data-reroll-fonds]");
+  if (rf) {                                    // « autres fonds » : re-rend en gardant voix+sous-titres
+    rf.disabled = true; const lib = rf.textContent; rf.textContent = "…";
+    const r = await fetch("/api/reroll/fonds", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fichier: decodeURIComponent(rf.dataset.rerollFonds) }) });
+    const d = await r.json().catch(() => ({}));
+    rf.disabled = false; rf.textContent = lib;
+    if (d.erreur) { alert(d.erreur); return; }
+    majJobs();
+    return;
+  }
+  const rhk = e.target.closest("[data-reroll-hook]");
+  if (rhk) {                                   // « autre accroche » : nouveau clip, même sujet, hook au choix
+    const sujet = decodeURIComponent(rhk.dataset.rerollHook);
+    const hook = await ouvrirHooks(sujet, $("#profil").value);
+    if (hook === "cancel") return;
+    const r = await fetch("/api/generer", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sujet, profil: $("#profil").value, mots: 175, hook }) });
+    const d = await r.json().catch(() => ({}));
+    if (verrou(d)) return;
+    majJobs(); majAbonnement();
+    return;
+  }
+  const plan = e.target.closest("[data-planifier]");
+  if (plan) {
+    const quand = prompt("Publier quand ? (format : 2026-07-11 18:00)");
+    if (!quand) return;
+    const r = await fetch("/api/planifier", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fichier: decodeURIComponent(plan.dataset.planifier), quand: quand.trim() }) });
+    if (!r.ok) alert((await r.json()).erreur);
+    majClips();
+    return;
+  }
+  const pubManuel = e.target.closest("[data-publie-manuel]");
+  if (pubManuel) {
+    await fetch("/api/marquer-publie", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fichier: decodeURIComponent(pubManuel.dataset.publieManuel) }) });
+    majClips(); majKpi();
+    $("#modal-boost").hidden = false;  // checklist « 2 min pour booster »
+    return;
+  }
+  if (e.target.closest("#boost-ok")) { $("#modal-boost").hidden = true; return; }
+  const cgen = e.target.closest("[data-gen-creneau]");
+  if (cgen) {
+    e.preventDefault();
+    const libelle = cgen.textContent;
+    const sujet = decodeURIComponent(cgen.dataset.sujet || "");
+    let hook = null;
+    if (sujet) {                          // choix de l'accroche avant de lancer le rendu du créneau
+      hook = await ouvrirHooks(sujet, "");
+      if (hook === "cancel") return;
+    }
+    cgen.disabled = true; cgen.textContent = "…";
+    const r = await fetch("/api/calendrier/generer", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: cgen.dataset.genCreneau, hook }) });
+    const d = await r.json().catch(() => ({}));
+    if (d.erreur) { if (!verrou(d)) alert(d.erreur); cgen.disabled = false; cgen.textContent = libelle; return; }
+    majCalendrier(); majJobs(); majAbonnement();
+    return;
+  }
+  const cser = e.target.closest("[data-gen-serie]");
+  if (cser) {
+    e.preventDefault();
+    cser.disabled = true; cser.textContent = "…";
+    const r = await fetch("/api/calendrier/generer-serie", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ serie: cser.dataset.genSerie }) });
+    const d = await r.json().catch(() => ({}));
+    if (d.erreur) { alert(d.erreur); cser.disabled = false; cser.textContent = "Générer la série"; return; }
+    majCalendrier(); majJobs();
+    return;
+  }
+  const cfait = e.target.closest("[data-fait-creneau]");
+  if (cfait) {
+    e.preventDefault();
+    await fetch("/api/calendrier/statut", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: cfait.dataset.faitCreneau, statut: "fait" }) });
+    majCalendrier();
+    return;
+  }
+  const cprevu = e.target.closest("[data-prevu-creneau]");
+  if (cprevu) {
+    e.preventDefault();
+    await fetch("/api/calendrier/statut", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: cprevu.dataset.prevuCreneau, statut: "prevu" }) });
+    majCalendrier();
+    return;
+  }
+  const csuppr = e.target.closest("[data-creneau-suppr]");
+  if (csuppr) {
+    e.preventDefault();
+    await fetch("/api/calendrier/supprimer", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: csuppr.dataset.creneauSuppr }) });
+    majCalendrier();
+    return;
+  }
+  const suppr = e.target.closest("[data-suppr]");
+  if (suppr && confirm("Supprimer ce clip définitivement ?")) {
+    await fetch("/api/supprimer", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fichier: decodeURIComponent(suppr.dataset.suppr) }) });
+    majClips();
+  }
+  const bio = e.target.closest("[data-bio]");
+  if (bio) {
+    $("#modal-bio").hidden = false;
+    $("#bio-texte").value = decodeURIComponent(bio.dataset.bioTexte);
+    $("#modal-bio")._fichier = decodeURIComponent(bio.dataset.bio);
+  }
+});
+
+$("#tt-fermer").addEventListener("click", () => { $("#modal-tiktok").hidden = true; });
+$("#tt-direct").addEventListener("click", () => tiktokPublier("direct"));
+$("#tt-draft").addEventListener("click", () => tiktokPublier("draft"));
+document.addEventListener("click", (e) => {
+  if (e.target.id === "tt-deco") { fetch("/api/tiktok/deconnecter", { method: "POST" }).then(majTiktok); }
+});
+
+$("#bio-fermer").addEventListener("click", () => { $("#modal-bio").hidden = true; });
+$("#bio-copier").addEventListener("click", async (e) => {
+  await navigator.clipboard.writeText($("#bio-texte").value);
+  e.target.textContent = "Copiée !";
+  setTimeout(() => { e.target.textContent = "Copier"; }, 1500);
+});
+$("#bio-enregistrer").addEventListener("click", async (e) => {
+  const r = await fetch("/api/caption", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ fichier: $("#modal-bio")._fichier, caption: $("#bio-texte").value }) });
+  e.target.textContent = r.ok ? "Enregistrée ✓" : "Erreur";
+  setTimeout(() => { e.target.textContent = "Enregistrer la bio"; $("#modal-bio").hidden = true; majClips(); }, 900);
+});
+
+// ─── Choix de l'accroche AVANT rendu (Sprint 2) ────────────────────────────
+// L'IA propose 3 angles pour le sujet ; on en choisit un (ou on laisse l'IA décider).
+// ouvrirHooks() renvoie une promesse : l'accroche choisie, `null` (sans imposée) ou "cancel".
+let _hooks = null;
+function ouvrirHooks(sujet, profil) {
+  return new Promise((resolve) => {
+    _hooks = { resolve, sujet, profil, liste: null, choix: null };
+    $("#hooks-sujet").textContent = "Sujet : " + sujet;
+    majHookValider();
+    $("#modal-hooks").hidden = false;
+    chargerHooks();
+  });
+}
+function majHookValider() {
+  const b = $("#hooks-valider");
+  b.disabled = !(_hooks && _hooks.choix != null);
+  b.style.opacity = b.disabled ? .5 : 1;
+}
+function fermerHooks(valeur) {
+  const cb = _hooks && _hooks.resolve;
+  $("#modal-hooks").hidden = true;
+  _hooks = null;
+  if (cb) cb(valeur);
+}
+async function chargerHooks() {
+  $("#hooks-liste").innerHTML = '<div class="hooks-load">✨ L\'IA imagine <b>3 accroches</b>…<br><span style="font-size:12px;opacity:.8">une dizaine de secondes</span></div>';
+  $("#hooks-regen").disabled = true;
+  try {
+    const r = await fetch("/api/hooks", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sujet: _hooks.sujet, profil: _hooks.profil }) });
+    const d = await r.json().catch(() => ({}));
+    if (!_hooks) return;  // modale fermée entre-temps
+    if (d.erreur || !d.hooks || !d.hooks.length) {
+      $("#hooks-liste").innerHTML = '<p class="vide">' + (d.erreur || "Aucune accroche générée.") + ' Réessaie, ou laisse l\'IA décider.</p>';
+    } else {
+      _hooks.liste = d.hooks; _hooks.choix = null; majHookValider();
+      $("#hooks-liste").innerHTML = d.hooks.map((h, i) =>
+        `<button type="button" class="hook-card" data-hook="${i}">
+           <span class="hook-angle">${calEsc(h.angle)}</span>
+           <span class="hook-parle">« ${calEsc(h.hook_parle)} »</span>
+           <span class="hook-ecran">à l'écran : ${calEsc(h.hook_ecran)}</span>
+         </button>`).join("");
+    }
+  } catch (_) {
+    if (_hooks) $("#hooks-liste").innerHTML = '<p class="vide">Erreur réseau, réessaie.</p>';
+  }
+  if (_hooks) $("#hooks-regen").disabled = false;
+}
+$("#hooks-liste").addEventListener("click", (e) => {
+  const c = e.target.closest(".hook-card"); if (!c || !_hooks) return;
+  _hooks.choix = +c.dataset.hook;
+  $("#hooks-liste").querySelectorAll(".hook-card").forEach((x) => x.classList.toggle("sel", x === c));
+  majHookValider();
+});
+$("#hooks-valider").addEventListener("click", () => {
+  if (_hooks && _hooks.choix != null) fermerHooks(_hooks.liste[_hooks.choix]);
+});
+$("#hooks-skip").addEventListener("click", () => fermerHooks(null));        // null = sans accroche imposée
+$("#hooks-annuler").addEventListener("click", () => fermerHooks("cancel")); // annule la génération
+$("#hooks-regen").addEventListener("click", () => { if (_hooks) chargerHooks(); });
+$("#modal-hooks").addEventListener("click", (e) => { if (e.target.id === "modal-hooks") fermerHooks("cancel"); });
+
+$("#form-generer").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const sujet = $("#sujet").value.trim();
+  const commentaire = $("#gen-comment").value.trim();
+  let hook = null;
+  if (sujet && !commentaire) {          // accroche imposée seulement si sujet précis (ni aléatoire, ni réponse-commentaire)
+    hook = await ouvrirHooks(sujet, $("#profil").value);
+    if (hook === "cancel") return;      // l'utilisateur a annulé
+  }
+  const btn = e.target.querySelector("button");
+  btn.disabled = true;
+  const r = await fetch("/api/generer", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sujet: $("#sujet").value, mots: $("#mots").value, profil: $("#profil").value,
+      commentaire: $("#gen-comment").value, commentaire_auteur: $("#gen-comment-auteur").value, hook }) });
+  const d = await r.json().catch(() => ({}));
+  btn.disabled = false;
+  if (verrou(d)) return;
+  $("#gen-comment").value = ""; $("#gen-comment-auteur").value = "";
+  majJobs(); majAbonnement();
+});
+
+$("#form-decouper").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const fichier = $("#fichier").files[0];
+  const lien = $("#lien-yt").value.trim();
+  if (!fichier && !lien) { alert("Choisis un fichier OU colle un lien YouTube."); return; }
+  const fd = new FormData();
+  if (fichier) fd.append("video", fichier);
+  if (lien) fd.append("url", lien);
+  fd.append("titre", $("#titre").value);
+  fd.append("duree", $("#duree").value);
+  fd.append("best_of", $("#bestof").value);
+  const btn = e.target.querySelector("button");
+  const jauge = $("#jauge-upload");
+  btn.disabled = true; jauge.hidden = false;
+  const xhr = new XMLHttpRequest();
+  xhr.open("POST", "/api/decouper");
+  xhr.upload.onprogress = (ev) => {
+    if (ev.lengthComputable) jauge.firstElementChild.style.width = (ev.loaded / ev.total * 100).toFixed(0) + "%";
+  };
+  xhr.onload = () => {
+    btn.disabled = false; jauge.hidden = true;
+    let d = {}; try { d = JSON.parse(xhr.responseText); } catch (err) {}
+    if (verrou(d)) return;
+    majJobs();
+  };
+  xhr.onerror = () => { btn.disabled = false; jauge.hidden = true; };
+  xhr.send(fd);
+});
+
+$("#form-creneau").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const quand = $("#creneau-quand").value.replace("T", " ");
+  const r = await fetch("/api/calendrier", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ quand, sujet: $("#creneau-sujet").value, profil: $("#profil").value }) });
+  if (!r.ok) alert((await r.json()).erreur);
+  $("#creneau-sujet").value = "";
+  majCalendrier();
+});
+
+$("#profil").addEventListener("change", () => { $("#theme").value = THEMES[$("#profil").value] || ""; });
+
+$("#btn-pause").addEventListener("click", async () => {
+  await fetch("/api/pause", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pause: false }) });
+  majKpi();
+});
+
+$("#btn-sync-stats").addEventListener("click", async (e) => {
+  e.target.disabled = true;
+  const r = await fetch("/api/stats/sync", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+  const d = await r.json();
+  e.target.disabled = false;
+  e.target.textContent = r.ok ? `Stats à jour (${d.posts} posts) ✓` : "Erreur de sync";
+  setTimeout(() => { e.target.textContent = "Synchroniser les stats TikTok"; }, 2500);
+  majStats(); majClips(); majKpi();
+});
+
+$("#btn-nouveau-profil").addEventListener("click", async () => {
+  const nom = prompt("Nom du nouveau profil (ex. science-kids) :");
+  if (!nom) return;
+  const theme = prompt("Ligne éditoriale de ce profil :") || "";
+  const pseudo = prompt("Pseudo TikTok du profil (watermark, ex. @ma.chaine) :") || "";
+  const r = await fetch("/api/profil/nouveau", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nom, theme, pseudo }) });
+  const d = await r.json();
+  if (!r.ok) { alert(d.erreur); return; }
+  await chargerConfig();
+  $("#profil").value = d.profil;
+  $("#theme").value = THEMES[d.profil] || "";
+});
+
+function cheminLisse(pts) {
+  // interpolation cubique monotone : courbes arrondies sans dépassement des valeurs
+  if (pts.length < 2) return "";
+  let d = `M${pts[0][0]},${pts[0][1]}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [x0, y0] = pts[i], [x1, y1] = pts[i + 1];
+    const cx = (x1 - x0) / 2.5;
+    d += ` C${x0 + cx},${y0} ${x1 - cx},${y1} ${x1},${y1}`;
+  }
+  return d;
+}
+
+function dessinerGraphe(conteneur, titre, serie, cle, couleur) {
+  const L = 560, H = 150, m = { g: 44, d: 10, h: 14, b: 22 };
+  const vals = serie.map(p => p[cle]);
+  const vMax = Math.max(...vals, 1), vMin = Math.min(...vals, 0);
+  const x = (i) => m.g + i * (L - m.g - m.d) / Math.max(serie.length - 1, 1);
+  const y = (v) => m.h + (H - m.h - m.b) * (1 - (v - vMin) / (vMax - vMin || 1));
+  const pts = serie.map((p, i) => [x(i), y(p[cle])]);
+  const grille = [vMin, (vMin + vMax) / 2, vMax];
+  const bloc = document.createElement("div");
+  bloc.innerHTML = `
+    <div style="font-size:13px;font-weight:600;margin:10px 0 2px">${titre}</div>
+    <svg viewBox="0 0 ${L} ${H}" style="width:100%;display:block" data-graphe>
+      ${grille.map(v => `<line x1="${m.g}" x2="${L - m.d}" y1="${y(v)}" y2="${y(v)}" stroke="var(--ligne)" stroke-width="1"/>
+        <text x="${m.g - 6}" y="${y(v) + 4}" text-anchor="end" font-size="10" fill="var(--sourdine)">${Math.round(v)}</text>`).join("")}
+      <text x="${m.g}" y="${H - 6}" font-size="10" fill="var(--sourdine)">${serie[0].date.slice(5)}</text>
+      <text x="${L - m.d}" y="${H - 6}" text-anchor="end" font-size="10" fill="var(--sourdine)">${serie[serie.length - 1].date.slice(5)}</text>
+      <path d="${cheminLisse(pts)}" fill="none" stroke="${couleur}" stroke-width="2" stroke-linecap="round"/>
+      <circle data-pt r="4.5" fill="${couleur}" stroke="var(--panneau)" stroke-width="2" opacity="0"/>
+      <rect data-zone x="${m.g}" y="0" width="${L - m.g - m.d}" height="${H}" fill="transparent"/>
+    </svg>`;
+  const svg = bloc.querySelector("svg"), zone = bloc.querySelector("[data-zone]"),
+        point = bloc.querySelector("[data-pt]"), info = $("#info-graphe");
+  zone.addEventListener("mousemove", (e) => {
+    // souris -> coordonnées viewBox via la matrice réelle du SVG : exact même quand
+    // le SVG est réduit/centré par preserveAspectRatio (bug du point décalé à gauche)
+    const ctm = svg.getScreenCTM();
+    const sx = ctm ? new DOMPoint(e.clientX, e.clientY).matrixTransform(ctm.inverse()).x
+                   : (e.clientX - svg.getBoundingClientRect().left) * L / svg.getBoundingClientRect().width;
+    let i = Math.round((sx - m.g) / ((L - m.g - m.d) / Math.max(serie.length - 1, 1)));
+    i = Math.max(0, Math.min(serie.length - 1, i));
+    point.setAttribute("cx", pts[i][0]); point.setAttribute("cy", pts[i][1]);
+    point.setAttribute("opacity", "1");
+    info.hidden = false;
+    info.innerHTML = `<b>${serie[i].date}</b><br>${titre} : <b>${serie[i][cle]}</b>`;
+    info.style.left = (e.clientX + 14) + "px";
+    info.style.top = (e.clientY - 10) + "px";
+  });
+  zone.addEventListener("mouseleave", () => { point.setAttribute("opacity", "0"); $("#info-graphe").hidden = true; });
+  conteneur.appendChild(bloc);
+}
+
+async function majGraphes() {
+  const serie = await (await fetch("/api/stats/serie")).json();
+  const zone = $("#graphes");
+  zone.innerHTML = "";
+  if (!serie.length) {
+    zone.innerHTML = '<p class="vide">Graphiques disponibles dès la connexion du compte.</p>';
+    return;
+  }
+  dessinerGraphe(zone, "Abonnés TikTok (30 jours)", serie, "abonnes", "var(--cyan)");
+  dessinerGraphe(zone, "Vues par jour (30 jours)", serie, "vues", "var(--rouge)");
+}
+
+async function majRapports() {
+  const liste = await (await fetch("/api/rapports")).json();
+  if (liste.length) {
+    $("#rapports").classList.remove("vide");
+    $("#rapports").innerHTML = liste.slice(0, 6).map((n) =>
+      `<div><a href="/rapports/${encodeURIComponent(n)}" target="_blank" style="color:var(--cyan)">${n}</a></div>`).join("");
+  }
+}
+
+$("#form-theme").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const r = await fetch("/api/profil", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ profil: $("#profil").value, theme: $("#theme").value }) });
+  if (r.ok) {
+    THEMES[$("#profil").value] = $("#theme").value;
+    const btn = e.target.querySelector("button");
+    btn.textContent = "Thème enregistré ✓";
+    setTimeout(() => { btn.textContent = "Enregistrer le thème"; }, 1800);
+  } else {
+    alert((await r.json()).erreur);
+  }
+});
+
+$("#btn-semaine").addEventListener("click", async () => {
+  await fetch("/api/planifier-semaine", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ profil: $("#profil").value }) });
+  majJobs();
+});
+
+// Connexion TikTok — dans la fenêtre native, l'OAuth s'ouvre dans le NAVIGATEUR SYSTÈME
+// (Google bloque sa connexion dans les webviews embarquées → écran blanc sinon).
+async function connecterTiktok() {
+  if (window.pywebview) {
+    const r = await fetch("/api/tiktok/connect-navigateur", { method: "POST" });
+    const d = await r.json();
+    if (d.ok) alert("La connexion TikTok s'est ouverte dans ton navigateur.\nTermine l'autorisation là-bas (Google, e-mail…), puis reviens ici.");
+    else alert(d.erreur || "Impossible d'ouvrir le navigateur.");
+  } else {
+    location.href = "/tiktok/connect";
+  }
+}
+
+// Mise à jour à distance : bandeau si une nouvelle version est publiée
+async function majVerifierVersion() {
+  try {
+    const d = await (await fetch("/api/maj")).json();
+    if (!d.maj) return;
+    const b = $("#maj-bandeau");
+    b.innerHTML = `<span>⬆ <b>Mise à jour ${calEsc(d.dispo)}</b> disponible (tu as la ${calEsc(d.actuelle)})` +
+      (d.notes ? ` — ${calEsc(d.notes)}` : "") + `</span>` +
+      `<button type="button" id="maj-go" style="margin:0 0 0 auto;width:auto;padding:8px 16px">Mettre à jour</button>`;
+    b.hidden = false;
+    $("#maj-go").addEventListener("click", async () => {
+      const btn = $("#maj-go"); btn.disabled = true; btn.textContent = "Téléchargement…";
+      const r = await fetch("/api/maj/installer", { method: "POST" });
+      const rep = await r.json();
+      if (rep.ok) {
+        b.innerHTML = "<span>✅ L'installeur de mise à jour s'ouvre — ClipMinute va se fermer, " +
+                      "se mettre à jour (tes données sont conservées) puis se relancer.</span>";
+      } else { btn.disabled = false; btn.textContent = "Mettre à jour"; alert(rep.erreur); }
+    });
+  } catch (e) { /* hors-ligne : silencieux */ }
+}
+majVerifierVersion();
+
+// Abonnement : badge d'en-tête + gestion des blocages (upgrade)
+async function majAbonnement() {
+  try {
+    const d = await (await fetch("/api/abonnement")).json();
+    $("#abo-badge").textContent = "✦ " + (d.infos && d.infos.nom || "Free");
+    const el = $("#credits"); if (!el) return;
+    const val = el.querySelector(".cr-val"), bar = el.querySelector(".cr-bar i"), fond = el.querySelector(".cr-bar");
+    el.classList.remove("low", "mid");
+    if (d.limite_clips == null) {  // illimité (Studio)
+      val.textContent = "∞"; bar.style.width = "100%"; fond.style.opacity = ".45";
+      el.title = "Crédits illimités — " + (d.infos && d.infos.nom);
+    } else {
+      const reste = Math.max(0, d.limite_clips - (d.clips_mois || 0));
+      const pct = d.limite_clips ? reste / d.limite_clips * 100 : 0;
+      val.textContent = reste; bar.style.width = pct + "%"; fond.style.opacity = "1";
+      if (reste === 0 || pct < 15) el.classList.add("low");
+      else if (pct < 40) el.classList.add("mid");
+      el.title = reste + " clip(s) restant(s) ce mois-ci sur " + d.limite_clips + " — " + (d.infos && d.infos.nom);
+    }
+  } catch (e) {}
+}
+function verrou(d) {  // true si un blocage d'abonnement a été traité (message + lien offres)
+  if (d && d.upgrade) {
+    if (confirm((d.erreur || "Fonction réservée à un niveau supérieur.") + "\n\nVoir les offres ?"))
+      location.href = "/offres";
+    return true;
+  }
+  return false;
+}
+// Tendances de la niche affichées au-dessus du calendrier
+async function majTrends() {
+  try {
+    const d = await (await fetch("/api/tendances")).json();
+    const t = (d.tendances || []).slice(0, 10);
+    const zone = $("#trends-panel");
+    if (!t.length) { zone.hidden = true; return; }
+    zone.hidden = false;
+    zone.innerHTML = '<span class="tp-label">🔥 Sujets qui montent</span>'
+      + t.map((x) => `<span class="tp-chip">${String(x).replace(/[<>&]/g, "")}</span>`).join("");
+  } catch (e) { $("#trends-panel").hidden = true; }
+}
+// Calendrier repliable (état mémorisé)
+(function () {
+  const sec = $("#cal-section");
+  const set = (c) => { sec.classList.toggle("collapsed", c);
+    $("#cal-toggle").setAttribute("aria-expanded", String(!c));
+    localStorage.setItem("cal-collapsed", c ? "1" : "0"); };
+  if (localStorage.getItem("cal-collapsed") === "1") set(true);
+  const toggle = () => set(!sec.classList.contains("collapsed"));
+  $("#cal-toggle").addEventListener("click", toggle);
+  $("#cal-title").addEventListener("click", toggle);
+})();
+
+(async () => { await majStats(); majClips(); })();
+// ——— effets premium : projecteur curseur, lueur cartes, onde au clic ———
+(function () {
+  const root = document.documentElement; let raf;
+  addEventListener("mousemove", (e) => {
+    if (!raf) raf = requestAnimationFrame(() => { raf = null;
+      root.style.setProperty("--mx", e.clientX + "px"); root.style.setProperty("--my", e.clientY + "px"); });
+    const c = e.target.closest && e.target.closest(".carte");
+    if (c) { const r = c.getBoundingClientRect();
+      c.style.setProperty("--cx", (e.clientX - r.left) + "px"); c.style.setProperty("--cy", (e.clientY - r.top) + "px"); }
+  }, { passive: true });
+  addEventListener("click", (e) => {
+    const b = e.target.closest && e.target.closest("button");
+    if (!b || b.disabled) return;
+    const r = b.getBoundingClientRect(), s = document.createElement("span");
+    s.className = "ripple"; s.style.left = (e.clientX - r.left) + "px"; s.style.top = (e.clientY - r.top) + "px";
+    b.appendChild(s); setTimeout(() => s.remove(), 600);
+  });
+})();
+// count-up des compteurs (une seule fois, au chargement)
+function countUpKpis() {
+  document.querySelectorAll("#kpis .kpi b, #kpi-compte .kpi b").forEach((el) => {
+    if (el.dataset.up) return;
+    const raw = el.textContent.trim(), target = parseFloat(raw.replace(/\s/g, "").replace(",", "."));
+    if (!isFinite(target) || target < 1) return;
+    el.dataset.up = "1"; const t0 = performance.now(), dur = 900;
+    const step = (t) => { const p = Math.min(1, (t - t0) / dur), v = Math.round(target * (1 - Math.pow(1 - p, 3)));
+      el.textContent = v.toLocaleString("fr-FR"); if (p < 1) requestAnimationFrame(step); else el.textContent = raw; };
+    requestAnimationFrame(step);
+  });
+}
+
+chargerConfig(); majJobs(); majCalendrier(); majAlertes(); majKpi(); majRapports(); majGraphes(); majTiktok(); majTrends(); majAbonnement();
+[700, 1500, 2600].forEach((d) => setTimeout(countUpKpis, d));  // rattrape les KPI dès qu'ils sont chargés
+setInterval(majGraphes, 300000);
+setInterval(majJobs, 2500);
+setInterval(() => { majCalendrier(); majAlertes(); majKpi(); majAbonnement(); }, 10000);
+setInterval(majTrends, 3600000);
+</script>
+<script src="/static/fenetre.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClipMinute — journal</title>
+<style>
+  :root {
+    --fond:#0e1016; --panneau:#161922; --panneau-2:#1d212c; --ligne:#242a36;
+    --texte:#eceef4; --sourdine:#9298a8; --cyan:#b6ff3a; --rouge:#ff2d55; --ok:#4ade80; --erreur:#f87171;
+    --sans:"Segoe UI",system-ui,-apple-system,sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background:var(--fond);
+    background-image:radial-gradient(120vw 55vh at 50% -12%, rgba(47,240,230,.05), transparent 62%);
+    color:var(--texte); font-family:var(--sans); font-size:14px; line-height:1.55;
+    padding:24px clamp(16px,4vw,48px) 72px; max-width:1000px; margin:0 auto; -webkit-font-smoothing:antialiased; }
+  h1 { font-family:var(--sans); font-weight:850; font-size:23px; letter-spacing:-.01em; text-transform:none; text-shadow:none; }
+  .retour { color:var(--sourdine); text-decoration:none; display:inline-flex; align-items:center; gap:6px;
+    font-size:13.5px; margin-bottom:18px; transition:color .15s; }
+  .retour:hover { color:var(--texte); }
+  .barre { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+  select, button { background: var(--panneau-2); color: var(--texte); border: 1px solid var(--ligne);
+    border-radius: 8px; padding: 8px 12px; font: inherit; cursor: pointer; }
+  button:hover { background: var(--ligne); }
+  select:focus, button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
+  .evenement { display: flex; gap: 12px; padding: 9px 12px; border-bottom: 1px solid var(--ligne);
+               align-items: baseline; background: var(--panneau); }
+  .evenement:first-of-type { border-radius: 10px 10px 0 0; }
+  .evenement:last-of-type { border-radius: 0 0 10px 10px; border-bottom: 0; }
+  .quand { color: var(--sourdine); font: 12px Consolas, monospace; white-space: nowrap; }
+  .badge { font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 20px;
+           white-space: nowrap; background: var(--panneau-2); }
+  .badge.grave { background: #3a1520; color: var(--erreur); }
+  .badge.bon { background: #12301d; color: var(--ok); }
+  .detail { color: var(--sourdine); font-size: 13px; overflow-wrap: anywhere; }
+  .vide { color: var(--sourdine); padding: 20px; }
+</style>
+</head>
+<body>
+  <h1>Journal</h1>
+  <p style="color:var(--sourdine);margin-bottom:8px">Tout ce que l'usine a fait : générations, publications, erreurs, réglages. Source : journal.jsonl.</p>
+  <a class="retour" href="/">← Retour à la régie</a>
+
+  <div class="barre">
+    <select id="filtre">
+      <option value="tout">Tout</option>
+      <option value="erreurs">Erreurs uniquement</option>
+    </select>
+    <select id="nombre">
+      <option value="100">100 derniers</option>
+      <option value="200" selected>200 derniers</option>
+      <option value="500">500 derniers</option>
+    </select>
+    <button type="button" id="rafraichir">Rafraîchir</button>
+    <button type="button" id="tout-lu">Marquer les alertes comme lues</button>
+  </div>
+
+  <div id="liste"><p class="vide">Chargement…</p></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const GRAVES = ["echec_publication", "erreur_scheduler", "erreur_generation", "service_manquant"];
+const BONS = ["clip_produit", "publie", "stats_sync", "rapport_hebdo"];
+
+async function charger() {
+  const evenements = await (await fetch(`/api/journal/complet?filtre=${$("#filtre").value}&n=${$("#nombre").value}`)).json();
+  const zone = $("#liste");
+  if (!evenements.length) { zone.innerHTML = '<p class="vide">Aucun événement pour ce filtre.</p>'; return; }
+  // Construction DOM + textContent : le journal contient du contenu TIERS (titres de
+  // vidéos, messages d'erreur, noms de fichiers). En innerHTML, un titre piégé
+  // exécuterait du code dans la fenêtre de l'app. textContent le rend inoffensif.
+  zone.textContent = "";
+  for (const e of evenements) {
+    const type = GRAVES.includes(e.evenement) ? "grave" : (BONS.includes(e.evenement) ? "bon" : "");
+    const details = Object.entries(e).filter(([k]) => k !== "quand" && k !== "evenement")
+      .map(([k, v]) => `${k}: ${String(v)}`).join(" · ");
+    const ligne = document.createElement("div");
+    ligne.className = "evenement";
+    const quand = document.createElement("span");
+    quand.className = "quand"; quand.textContent = e.quand;
+    const badge = document.createElement("span");
+    badge.className = "badge " + type; badge.textContent = e.evenement;
+    const detail = document.createElement("span");
+    detail.className = "detail"; detail.textContent = details || "—";
+    ligne.append(quand, badge, detail);
+    zone.appendChild(ligne);
+  }
+}
+
+$("#filtre").addEventListener("change", charger);
+$("#nombre").addEventListener("change", charger);
+$("#rafraichir").addEventListener("click", charger);
+$("#tout-lu").addEventListener("click", async (e) => {
+  await fetch("/api/journal/lu", { method: "POST" });
+  e.target.textContent = "Alertes marquées comme lues ✓";
+  setTimeout(() => { e.target.textContent = "Marquer les alertes comme lues"; }, 2000);
+});
+
+charger();
+</script>
+<script src="/static/fenetre.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClipMinute — Privacy Policy</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%8F%B1%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--ink:#0A0D12;--panel:#141A23;--line:#232C3A;--text:#EAEEF4;--muted:#8B96A6;--dim:#5C6675;--lime:#B6FF3A;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--mono:ui-monospace,Menlo,Consolas,monospace}
+  body{background:var(--ink);color:var(--text);font-family:var(--sans);line-height:1.65;-webkit-font-smoothing:antialiased}
+  a{color:var(--lime);text-decoration:none}a:hover{text-decoration:underline}
+  .wrap{max-width:760px;margin:0 auto;padding:0 24px}
+  header{border-bottom:1px solid var(--line);background:rgba(10,13,18,.7);backdrop-filter:blur(12px);position:sticky;top:0}
+  nav{height:62px;display:flex;align-items:center;justify-content:space-between}
+  .brand{font-weight:800;font-size:19px;letter-spacing:-.02em}.brand .l{color:var(--lime)}
+  .back{font-size:13.5px;color:var(--muted)}
+  main{padding:52px 0 40px}
+  h1{font-size:30px;letter-spacing:-.02em;font-weight:820}
+  .upd{font-family:var(--mono);font-size:12.5px;color:var(--dim);margin-top:8px}
+  h2{font-size:17px;margin-top:34px;letter-spacing:-.01em;color:#fff}
+  p,li{color:#c9d0da;font-size:15.5px;margin-top:12px}
+  ul{margin:6px 0 0 22px}li{margin-top:8px}
+  code{font-family:var(--mono);font-size:13px;background:var(--panel);border:1px solid var(--line);padding:1px 6px;border-radius:6px;color:var(--lime)}
+  footer{border-top:1px solid var(--line);margin-top:48px;padding:26px 0;color:var(--dim);font-size:13px}
+  footer a{color:var(--muted)}
+</style>
+</head>
+<body>
+<header><nav class="wrap"><a href="index.html" class="brand">Clip<span class="l">Minute</span></a><a href="index.html" class="back">← Home</a></nav></header>
+<main class="wrap">
+  <h1>Privacy Policy</h1>
+  <p class="upd">Last updated: July 24, 2026</p>
+
+  <p>ClipMinute is a desktop application for independent short-form video creators. Each creator installs ClipMinute on their own computer, connects their own TikTok account through TikTok Login (OAuth), produces short vertical videos inside the app, and publishes those videos to the TikTok account they personally own and connected. ClipMinute is a tool used by many individual creators; each user only ever manages the single account they connect.</p>
+
+  <h2>Data we access (per connected creator)</h2>
+  <p>With the creator's explicit authorization via TikTok Login, ClipMinute accesses only, for the creator's own account:</p>
+  <ul>
+    <li>basic profile information (username, display name, avatar) — shown on the publish screen so the creator confirms they are posting to the correct account;</li>
+    <li>the account's posting eligibility and options returned by <code>creator_info</code> (available privacy levels, whether comment/duet/stitch are allowed, maximum video duration);</li>
+    <li>the ability to upload and publish videos to that same account;</li>
+    <li>public statistics of the creator's own account and posts (views, likes, followers) to display performance inside the app.</li>
+  </ul>
+  <p>ClipMinute never accesses, collects, or processes data about any other TikTok user, nor content from accounts the creator does not own.</p>
+
+  <h2>Where data is stored</h2>
+  <p>ClipMinute runs locally on each creator's own computer. OAuth tokens and the creator's own public statistics are stored locally on that computer, isolated per creator. No data is transmitted to ClipMinute's developer, sold, or shared with third parties. Video generation may call third-party APIs the creator configures (e.g. an AI text provider, stock-footage providers) using the creator's own keys; only the prompt/search terms needed to produce the video are sent to those services.</p>
+
+  <h2>Data removal</h2>
+  <p>A creator can revoke ClipMinute's access at any time from the TikTok app (Settings → Security &amp; permissions → Manage app permissions). Upon revocation, stored tokens become invalid. All locally stored data can be deleted by the creator at any time by removing their ClipMinute data folder or uninstalling the app.</p>
+
+  <h2>Children</h2>
+  <p>ClipMinute is intended for creators aged 18 and older and is not directed at children.</p>
+
+  <h2>Contact</h2>
+  <p>For any question regarding this policy: <a href="mailto:truchy.alex@orange.fr">truchy.alex@orange.fr</a></p>
+</main>
+<footer class="wrap">© 2026 ClipMinute · <a href="index.html">Home</a> · <a href="terms.html">Terms</a> · ClipMinute is an independent tool, not affiliated with or endorsed by TikTok.</footer>
+</body>
+</html>

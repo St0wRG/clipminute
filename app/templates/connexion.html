@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClipMinute — {{ 'inscription' if mode == 'inscription' else 'connexion' }}</title>
+<style>
+  :root{
+    --fond:#0e1016; --panneau:#161922; --panneau-2:#1d212c; --ligne:#242a36;
+    --texte:#eceef4; --sourdine:#9298a8; --faint:#5c6272;
+    --cyan:#b6ff3a; --rouge:#ff2d55; --erreur:#f87171;
+    --sans:"Segoe UI",system-ui,-apple-system,sans-serif;
+    --mono:"Cascadia Mono",Consolas,"Roboto Mono",monospace;
+  }
+  *{ box-sizing:border-box; margin:0 }
+  body{ background:var(--fond); color:var(--texte); font-family:var(--sans); font-size:15px; line-height:1.55;
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; overflow:hidden; }
+  /* halos animés en fond */
+  body::before, body::after{ content:""; position:fixed; z-index:0; border-radius:50%; filter:blur(90px); opacity:.5; pointer-events:none }
+  body::before{ width:52vw; height:52vw; top:-16vw; left:-12vw;
+    background:radial-gradient(circle,rgba(47,240,230,.24),transparent 70%); animation:drift1 22s ease-in-out infinite }
+  body::after{ width:46vw; height:46vw; bottom:-14vw; right:-10vw;
+    background:radial-gradient(circle,rgba(255,45,85,.22),transparent 70%); animation:drift2 26s ease-in-out infinite }
+  @keyframes drift1{ 50%{ transform:translate(6vw,4vw) scale(1.12) } }
+  @keyframes drift2{ 50%{ transform:translate(-5vw,-4vw) scale(1.15) } }
+
+  .boite{ width:min(390px,100%); position:relative; z-index:1; animation:rise .6s cubic-bezier(.2,.75,.25,1) both }
+  h1{ font-family:var(--sans); font-weight:850; font-size:28px; letter-spacing:.03em; text-transform:uppercase;
+    text-align:center; display:flex; align-items:center; justify-content:center; }
+  h1 .fg{ color:var(--cyan) }
+  h1::after{ content:""; width:8px; height:8px; border-radius:50%; background:var(--cyan); margin-left:11px;
+    box-shadow:0 0 12px var(--cyan); animation:live 2.4s ease-in-out infinite }
+  @keyframes live{ 0%,100%{ opacity:.35 } 50%{ opacity:1 } }
+  .sous{ color:var(--sourdine); text-align:center; margin:8px 0 24px; font-size:12px; letter-spacing:.14em;
+    text-transform:uppercase; font-family:var(--mono) }
+
+  .carte{ position:relative; background:linear-gradient(180deg,#181c27,var(--panneau)); border:1px solid var(--ligne);
+    border-radius:16px; padding:24px; box-shadow:0 1px 2px rgba(0,0,0,.35),0 24px 60px rgba(0,0,0,.5) }
+  .carte::before{ content:""; position:absolute; left:1px; right:1px; top:0; height:1px; border-radius:16px 16px 0 0;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent) }
+  label{ display:block; color:var(--sourdine); font-size:12.5px; font-weight:500; margin:14px 0 5px }
+  input{ width:100%; background:var(--panneau-2); color:var(--texte); border:1px solid var(--ligne);
+    border-radius:10px; padding:11px 13px; font:inherit; transition:border-color .18s, box-shadow .18s }
+  input:focus{ outline:none; border-color:var(--cyan); box-shadow:0 0 0 3px rgba(47,240,230,.16) }
+  button{ margin-top:20px; width:100%; padding:12px; border:0; border-radius:10px;
+    background:var(--cyan); color:#052a27; font-weight:800; font-size:15px; cursor:pointer;
+    transition:filter .15s, transform .12s, box-shadow .2s; box-shadow:0 8px 22px rgba(47,240,230,.18) }
+  button:hover{ filter:brightness(1.06); box-shadow:0 12px 30px rgba(47,240,230,.28) }
+  button:active{ transform:scale(.97) }
+  .erreur{ background:rgba(255,45,85,.12); border:1px solid var(--rouge); border-radius:10px;
+    padding:10px 13px; font-size:13px; margin-bottom:8px; color:#ffb3c1 }
+  .bascule{ text-align:center; margin-top:16px; font-size:13.5px; color:var(--sourdine) }
+  .bascule a{ color:var(--cyan); text-decoration:none; font-weight:600 }
+  .bascule a:hover{ text-decoration:underline }
+  @keyframes rise{ from{ opacity:0; transform:translateY(18px) } to{ opacity:1; transform:none } }
+
+  /* ---- profil mémorisé : avatar qui flotte, AUCUNE boîte (style Netflix) ---- */
+  .profil-zone{ text-align:center; padding:6px 0 0 }
+  .profil-zone form{ margin:0 }
+  button.avatar-btn, button.pas-moi{ background:transparent !important; border:0 !important;
+    box-shadow:none !important; padding:0 !important; width:auto !important;
+    color:inherit; font:inherit; cursor:pointer }
+  button.avatar-btn{ display:block; margin:0 auto !important }   /* centré dans la boîte */
+  button.pas-moi{ display:inline-block; margin:20px 0 0 !important }
+  .avatar{ width:112px; height:112px; margin:0 auto; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:46px; font-weight:850; color:#fff; text-shadow:0 2px 8px rgba(0,0,0,.35);
+    box-shadow:0 18px 50px rgba(0,0,0,.55);
+    transition:transform .18s cubic-bezier(.2,.8,.2,1), box-shadow .2s;
+    animation:pop .5s cubic-bezier(.2,1.4,.3,1) both }
+  .avatar-btn:hover .avatar{ transform:scale(1.06);
+    box-shadow:0 0 0 4px rgba(182,255,58,.35), 0 0 34px rgba(182,255,58,.28), 0 18px 50px rgba(0,0,0,.55) }
+  .avatar-btn:active .avatar{ transform:scale(.98) }
+  @keyframes pop{ from{ opacity:0; transform:scale(.6) } to{ opacity:1; transform:none } }
+  .profil-email{ display:block; font-weight:700; font-size:16px; margin-top:16px }
+  .profil-invite{ display:block; color:var(--sourdine); font-size:12.5px; margin-top:3px }
+  .pas-moi{ display:inline-block; margin-top:20px !important; color:var(--sourdine); font-size:13px;
+    text-decoration:underline; text-underline-offset:3px }
+  .pas-moi:hover{ color:var(--texte) }
+  @media (prefers-reduced-motion:reduce){ *,*::before,*::after{ animation:none !important } }
+</style>
+</head>
+<body>
+  <div class="boite">
+    <h1>Clip<span class="fg">Minute</span></h1>
+    <p class="sous">Régie de production</p>
+    {% if profil and mode == 'connexion' %}
+    <div class="profil-zone">
+      <form method="post" action="/connexion-rapide">
+        <input type="hidden" name="email" value="{{ profil.email }}">
+        <button type="submit" class="avatar-btn" title="Se connecter en tant que {{ profil.email }}">
+          <span class="avatar" style="background:linear-gradient(135deg, hsl({{ profil.teinte }},75%,52%), hsl({{ (profil.teinte + 46) % 360 }},80%,40%))">{{ profil.initiale }}</span>
+          <span class="profil-email">{{ profil.email }}</span>
+          <span class="profil-invite">Clique pour entrer</span>
+        </button>
+      </form>
+      <form method="post" action="/oublier-profil">
+        <button type="submit" class="pas-moi">Ce n'est pas moi</button>
+      </form>
+    </div>
+    {% else %}
+    <div class="carte">
+      {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
+      <form method="post" action="{{ action }}">
+        <label for="email">Adresse e-mail</label>
+        <input type="email" id="email" name="email" required autocomplete="username" value="{{ email or '' }}">
+        <label for="mdp">Mot de passe {% if mode == 'inscription' %}(8 caractères minimum){% endif %}</label>
+        <input type="password" id="mdp" name="mdp" required minlength="8"
+               autocomplete="{{ 'new-password' if mode == 'inscription' else 'current-password' }}">
+        <button type="submit">{{ 'Créer mon compte' if mode == 'inscription' else 'Se connecter' }}</button>
+      </form>
+      <p class="bascule">
+        {% if mode == 'inscription' %}Déjà un compte ? <a href="/connexion">Se connecter</a>
+        {% else %}Pas encore de compte ? <a href="/inscription">S'inscrire</a>{% endif %}
+      </p>
+      {% endif %}
+    </div>
+  </div>
+<script src="/static/fenetre.js" defer></script>
+</body>
+</html>

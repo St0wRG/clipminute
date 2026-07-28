@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>ClipMinute</title>
+<style>
+  *{margin:0;box-sizing:border-box}
+  html,body{height:100%;overflow:hidden}
+  body{background:#0A0D12;color:#EAEEF4;font-family:"Segoe UI",system-ui,sans-serif;
+    display:flex;align-items:center;justify-content:center;user-select:none;cursor:default}
+  /* halos d'ambiance */
+  .halo{position:fixed;border-radius:50%;filter:blur(80px);opacity:.45;pointer-events:none}
+  .halo.a{width:60vw;height:60vw;left:-18vw;top:-22vw;background:radial-gradient(circle,rgba(182,255,58,.5),transparent 62%);animation:d1 9s ease-in-out infinite}
+  .halo.b{width:50vw;height:50vw;right:-16vw;bottom:-18vw;background:radial-gradient(circle,rgba(57,216,255,.38),transparent 62%);animation:d2 11s ease-in-out infinite}
+  @keyframes d1{50%{transform:translate(6vw,5vw) scale(1.15)}}
+  @keyframes d2{50%{transform:translate(-5vw,-6vw) scale(1.1)}}
+
+  .scene{position:relative;text-align:center;z-index:1}
+  .marque{display:flex;align-items:baseline;justify-content:center;font-weight:850;
+    font-size:clamp(40px,8vw,64px);letter-spacing:-.03em;line-height:1}
+  .m1{animation:gauche .7s cubic-bezier(.2,.8,.2,1) both}
+  .m2{color:#B6FF3A;animation:droite .7s cubic-bezier(.2,.8,.2,1) .12s both}
+  @keyframes gauche{from{opacity:0;transform:translateX(-42px)}to{opacity:1;transform:none}}
+  @keyframes droite{from{opacity:0;transform:translateX(42px)}to{opacity:1;transform:none}}
+
+  /* la pastille "minute" tombe puis bat */
+  .dot{display:inline-block;width:12px;height:12px;border-radius:50%;background:#B6FF3A;margin-left:14px;
+    box-shadow:0 0 18px #B6FF3A;animation:chute .55s cubic-bezier(.3,1.6,.4,1) .5s both, pouls 1.6s ease-in-out 1.2s infinite}
+  @keyframes chute{from{opacity:0;transform:translateY(-46px)}to{opacity:1;transform:none}}
+  @keyframes pouls{50%{transform:scale(.55);opacity:.6}}
+
+  .cadran{margin:34px auto 0;width:66px;height:66px;border-radius:50%;border:3px solid rgba(182,255,58,.25);
+    position:relative;animation:app .5s .7s both}
+  .cadran::before{content:"";position:absolute;left:50%;top:50%;width:3px;height:24px;border-radius:2px;
+    background:#B6FF3A;transform-origin:50% 0;box-shadow:0 0 10px rgba(182,255,58,.6);
+    animation:aiguille 2.4s cubic-bezier(.6,.05,.3,1) .9s infinite}
+  @keyframes app{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:none}}
+  @keyframes aiguille{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+
+  .msg{margin-top:26px;font-size:13px;color:#8B96A6;letter-spacing:.14em;text-transform:uppercase;
+    font-family:ui-monospace,Consolas,monospace;animation:app .5s 1s both}
+  .barre{margin:16px auto 0;width:210px;height:3px;border-radius:2px;background:#1A2230;overflow:hidden;animation:app .5s 1.1s both}
+  .barre i{display:block;height:100%;width:40%;border-radius:2px;background:linear-gradient(90deg,transparent,#B6FF3A,transparent);
+    animation:scan 1.3s ease-in-out infinite}
+  @keyframes scan{from{transform:translateX(-110%)}to{transform:translateX(290%)}}
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.01s !important;animation-iteration-count:1 !important}}
+</style>
+</head>
+<body>
+  <div class="halo a"></div><div class="halo b"></div>
+  <div class="scene">
+    <div class="marque"><span class="m1">Clip</span><span class="m2">Minute</span><span class="dot"></span></div>
+    <div class="cadran"></div>
+    <div class="msg" id="msg">Préparation du studio…</div>
+    <div class="barre"><i></i></div>
+  </div>
+<script>
+  var msgs = ["Préparation du studio…", "Chauffe des moteurs vidéo…", "Accord des sous-titres…", "Presque prêt…"];
+  var i = 0;
+  setInterval(function(){ i = (i+1) % msgs.length; document.getElementById("msg").textContent = msgs[i]; }, 2200);
+  /* Le lanceur (python) bascule la fenêtre vers l'app dès que le serveur répond. */
+</script>
+</body>
+</html>

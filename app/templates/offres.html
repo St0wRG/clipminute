@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClipMinute — Offres</title>
+<style>
+  :root{
+    --fond:#0e1015; --panneau:#181b23; --panneau-2:#1f232d; --ligne:#2a2f3a;
+    --texte:#eceaf2; --sourdine:#9a97a8; --faint:#6a6878;
+    --cyan:#b6ff3a; --rouge:#fe2c55; --ok:#4ade80;
+  }
+  *{box-sizing:border-box; margin:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--fond); color:var(--texte); min-height:100vh;
+    font:15px/1.6 "Segoe UI",system-ui,sans-serif; overflow-x:hidden;
+    padding:0 clamp(16px,4vw,48px) 80px; position:relative;
+  }
+  /* halos animés en fond (aucune image) */
+  body::before, body::after{
+    content:""; position:fixed; z-index:0; border-radius:50%; filter:blur(90px);
+    opacity:.5; pointer-events:none;
+  }
+  body::before{ width:52vw; height:52vw; top:-14vw; left:-10vw;
+    background:radial-gradient(circle,rgba(37,244,238,.28),transparent 70%); animation:drift1 22s ease-in-out infinite; }
+  body::after{ width:46vw; height:46vw; bottom:-12vw; right:-8vw;
+    background:radial-gradient(circle,rgba(254,44,85,.26),transparent 70%); animation:drift2 26s ease-in-out infinite; }
+  @keyframes drift1{ 50%{ transform:translate(6vw,4vw) scale(1.12) } }
+  @keyframes drift2{ 50%{ transform:translate(-5vw,-4vw) scale(1.15) } }
+  .wrap{ position:relative; z-index:1; max-width:1120px; margin:0 auto }
+
+  .topbar{ display:flex; align-items:center; justify-content:space-between; padding:22px 0; flex-wrap:wrap; gap:12px }
+  .back{ color:var(--sourdine); text-decoration:none; font-size:14px; display:inline-flex; align-items:center; gap:7px; transition:color .15s }
+  .back:hover{ color:var(--texte) }
+  .badge-actuel{ font-size:12px; color:var(--sourdine); border:1px solid var(--ligne); border-radius:999px; padding:6px 13px; background:var(--panneau) }
+  .badge-actuel b{ color:var(--cyan) }
+
+  .hero{ text-align:center; padding:34px 0 46px; }
+  .logo{ font-family:"Arial Black",Arial,sans-serif; font-size:clamp(30px,6vw,52px); letter-spacing:1px;
+    text-transform:uppercase; text-shadow:-2px 0 var(--cyan), 2px 1px var(--rouge); margin-bottom:16px;
+    animation:rise .6s cubic-bezier(.2,.7,.2,1) both }
+  .hero h1{ font-size:clamp(22px,4.2vw,38px); font-weight:800; letter-spacing:-.02em; line-height:1.15;
+    max-width:14ch; margin:0 auto 14px; text-wrap:balance; animation:rise .6s .06s both }
+  .hero h1 .grad{ background:linear-gradient(90deg,var(--cyan),var(--rouge)); -webkit-background-clip:text; background-clip:text; color:transparent }
+  .hero p{ color:var(--sourdine); font-size:clamp(15px,2vw,18px); max-width:52ch; margin:0 auto; animation:rise .6s .12s both }
+
+  .tiers{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; align-items:start; }
+  @media (max-width:860px){ .tiers{ grid-template-columns:1fr; max-width:460px; margin:0 auto } }
+
+  .tier{ position:relative; background:var(--panneau); border:1px solid var(--ligne); border-radius:20px;
+    padding:26px 24px 24px; display:flex; flex-direction:column; gap:4px; overflow:hidden;
+    transition:transform .22s cubic-bezier(.2,.7,.2,1), box-shadow .22s, border-color .22s;
+    animation:rise .6s both }
+  .tier:nth-child(1){ animation-delay:.10s } .tier:nth-child(2){ animation-delay:.16s } .tier:nth-child(3){ animation-delay:.22s }
+  .tier::before{ content:""; position:absolute; inset:0 0 auto; height:3px; background:var(--accent); opacity:.9 }
+  .tier:hover{ transform:translateY(-6px); box-shadow:0 20px 50px rgba(0,0,0,.5); border-color:color-mix(in srgb,var(--accent) 55%,var(--ligne)) }
+  .tier.pop{ border-color:transparent; transform:translateY(-8px);
+    box-shadow:0 0 0 1.5px var(--accent), 0 26px 60px rgba(254,44,85,.22) }
+  .tier.pop:hover{ transform:translateY(-14px) }
+  .tier.pop::after{ content:""; position:absolute; inset:0; border-radius:20px; padding:1.5px;
+    background:linear-gradient(135deg,var(--cyan),var(--rouge)); -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none; opacity:.7 }
+  .pop-tag{ position:absolute; top:14px; right:-34px; transform:rotate(45deg); background:linear-gradient(90deg,var(--cyan),var(--rouge));
+    color:#08111a; font-weight:800; font-size:10px; letter-spacing:.14em; text-transform:uppercase; padding:5px 40px; box-shadow:0 4px 12px rgba(0,0,0,.4) }
+
+  .t-nom{ font-family:"Arial Black",Arial,sans-serif; font-size:20px; text-transform:uppercase; letter-spacing:.5px; color:var(--accent) }
+  .t-prix{ display:flex; align-items:baseline; gap:6px; margin:6px 0 2px }
+  .t-prix .p{ font-size:40px; font-weight:800; letter-spacing:-.03em }
+  .t-prix .u{ color:var(--sourdine); font-size:14px }
+  .t-accroche{ color:var(--sourdine); font-size:13.5px; min-height:38px; margin-bottom:14px }
+  .feats{ list-style:none; display:flex; flex-direction:column; gap:9px; padding:16px 0; border-top:1px solid var(--ligne); flex:1 }
+  .feats li{ display:flex; align-items:flex-start; gap:10px; font-size:13.5px; line-height:1.4 }
+  .feats li.off{ color:var(--faint) }
+  .ck{ color:var(--accent); flex:none; font-weight:800; width:16px; text-align:center }
+  .cx{ color:var(--faint); flex:none; width:16px; text-align:center }
+  .val{ flex:none; min-width:16px; font-family:"Cascadia Mono",Consolas,monospace; font-weight:700; font-size:12px;
+    color:var(--accent); background:color-mix(in srgb,var(--accent) 15%,transparent); border-radius:6px; padding:1px 6px; text-align:center }
+
+  .cta{ margin-top:16px; width:100%; padding:13px; border:0; border-radius:11px; font-size:15px; font-weight:800; cursor:pointer;
+    background:var(--panneau-2); color:var(--texte); border:1px solid var(--ligne); transition:transform .12s, filter .15s, box-shadow .2s }
+  .cta:hover{ transform:translateY(-2px) }
+  .tier.pop .cta{ background:linear-gradient(90deg,var(--cyan),var(--rouge)); color:#08111a; border:0; box-shadow:0 8px 22px rgba(254,44,85,.3) }
+  .tier.pop .cta:hover{ filter:brightness(1.08); box-shadow:0 12px 30px rgba(254,44,85,.42) }
+  .cta.actuel{ background:transparent; border:1px dashed var(--accent); color:var(--accent); cursor:default }
+  .cta.actuel:hover{ transform:none }
+
+  .note{ text-align:center; color:var(--faint); font-size:12.5px; margin-top:34px; max-width:60ch; margin-left:auto; margin-right:auto }
+  .note a{ color:var(--sourdine) }
+  @keyframes rise{ from{ opacity:0; transform:translateY(18px) } to{ opacity:1; transform:none } }
+  @media (prefers-reduced-motion:reduce){ *{ animation:none !important } body::before,body::after{ animation:none } }
+
+  #toast{ position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px); z-index:20;
+    background:var(--panneau); border:1px solid var(--ligne); border-radius:12px; padding:12px 18px; font-size:14px;
+    opacity:0; transition:opacity .2s, transform .2s; pointer-events:none; box-shadow:0 16px 40px rgba(0,0,0,.5) }
+  #toast.show{ opacity:1; transform:translateX(-50%) translateY(0) }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a class="back" href="/">← Retour au dashboard</a>
+    <span class="badge-actuel">Ton offre : <b>{{ tiers[tier].nom }}</b></span>
+  </div>
+
+  <header class="hero">
+    <div class="logo">ClipMinute</div>
+    <h1>Transforme une idée en <span class="grad">clip viral</span>, sur pilote automatique.</h1>
+    <p>Scripts qui accrochent, voix off, sous-titres, fonds premium, calendrier et tendances de ta niche — l'usine à clips complète. Commence gratuitement, passe à la vitesse supérieure quand tu es prêt.</p>
+  </header>
+
+  <section class="tiers">
+    {% for t in ordre %}
+      {% set ti = tiers[t] %}
+      <div class="tier {% if ti.populaire %}pop{% endif %} {% if t == tier %}est-actuel{% endif %}" style="--accent:{{ ti.accent }}">
+        {% if ti.populaire %}<div class="pop-tag">Populaire</div>{% endif %}
+        <div class="t-nom">{{ ti.nom }}</div>
+        <div class="t-prix"><span class="p">{{ ti.prix_label }}</span>{% if ti.prix %}<span class="u">/ mois</span>{% endif %}</div>
+        <div class="t-accroche">{{ ti.accroche }}</div>
+        <ul class="feats">
+          {% for l in grille %}
+            {% set v = l.valeurs[t] %}
+            <li class="{% if v is sameas false %}off{% endif %}">
+              {% if v is sameas true %}<span class="ck">✓</span>
+              {% elif v is sameas false %}<span class="cx">✕</span>
+              {% else %}<span class="val">{{ v }}</span>{% endif %}
+              <span>{{ l.label }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+        {% if t == tier %}
+          <button class="cta actuel" disabled>✓ Ton offre actuelle</button>
+        {% else %}
+          <button class="cta" data-choisir="{{ t }}">{{ ti.cta }}</button>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </section>
+
+  <p class="note">
+    🔒 Paiement sécurisé par Stripe — <b>bientôt disponible</b>. En attendant, les boutons activent un
+    <b>aperçu</b> du niveau pour que tu essaies chaque expérience. Tu peux revenir en Free à tout moment.
+    Annulable en un clic, sans engagement.
+  </p>
+</div>
+
+<div id="toast"></div>
+<script>
+  const toast = (msg) => { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2600); };
+  document.querySelectorAll('[data-choisir]').forEach((b) => {
+    b.addEventListener('click', async () => {
+      const tier = b.dataset.choisir;
+      b.disabled = true; const avant = b.textContent; b.textContent = '…';
+      try {
+        const r = await fetch('/api/abonnement/definir', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ tier }) });
+        const d = await r.json();
+        if (d.ok) { toast('Aperçu « ' + tier.toUpperCase() + ' » activé — redirection…'); setTimeout(()=>location.href='/', 900); }
+        else { toast(d.erreur || 'Erreur'); b.disabled=false; b.textContent=avant; }
+      } catch(e){ toast('Erreur réseau'); b.disabled=false; b.textContent=avant; }
+    });
+  });
+</script>
+<script src="/static/fenetre.js" defer></script>
+</body>
+</html>
